@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProRF · 任意网络拓扑设计探索</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0c0e1a; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; }
+.page { max-width: 1000px; margin: 0 auto; padding: 28px 24px 72px; }
+h1 { font-size: 20px; font-weight: 800; color: #f1f5f9; letter-spacing: -.3px; }
+.sub { font-size: 13px; color: #64748b; line-height: 1.65; margin: 6px 0 32px; }
+
+.sec { margin-bottom: 36px; }
+.sec-tag { font-size: 10px; font-weight: 800; color: #4f8ef7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.sec-title { font-size: 16px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
+.sec-body { font-size: 12px; color: #64748b; line-height: 1.75; }
+.sec-body strong { color: #94a3b8; }
+
+.row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; margin-top: 16px; }
+.col-l { flex: 1 1 300px; }
+.col-r { flex: 1 1 300px; }
+
+code { color: #c084fc; background: #1c1f32; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.callout { background: #0e1020; border: 1px solid #1c1f32; border-radius: 12px; padding: 14px 16px; margin-top: 14px; font-size: 12px; color: #64748b; line-height: 1.75; }
+.callout strong { color: #e2e8f0; }
+
+/* Phone */
+.phone { width: 290px; height: 560px; border-radius: 36px; background: #111320; border: 7px solid #252840; overflow: hidden; box-shadow: 0 20px 60px #00000088, inset 0 1px 0 #ffffff07; }
+.phone-inner { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.topbar { display: flex; align-items: center; gap: 8px; padding: 10px 13px 9px; background: #161828; border-bottom: 1px solid #252840; flex-shrink: 0; }
+.tb-back { font-size: 17px; color: #4f8ef7; cursor: pointer; }
+.tb-title { font-size: 13px; font-weight: 700; color: #e2e8f0; flex: 1; }
+
+/* Compare table */
+.table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.table th { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; padding: 8px 12px; text-align: left; border-bottom: 1px solid #1c1f32; }
+.table td { font-size: 12px; color: #94a3b8; padding: 9px 12px; border-bottom: 1px solid #1c1f32; }
+.table tr:last-child td { border-bottom: none; }
+.g { color: #22c55e; } .y { color: #f59e0b; } .r { color: #ef4444; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ── Layout constants ─────────────────────────────────────────
+const LH  = 62;           // layer pitch (px)
+const LW  = 155;          // left-lane width
+const RW  = 97;           // right-lane width
+const LG  = 8;            // inter-lane gap
+const FW  = LW + LG + RW; // 260 — full width
+const NH  = 38;           // node card height
+const PAD = 10;           // vertical padding
+const LCX = LW / 2;                    // ≈ 78
+const RCX = LW + LG + RW / 2;          // ≈ 212
+const FCX = FW / 2;                     // 130
+
+// ── Sample graph: TX → PA → Coupler → Filter → Combiner → Ant
+//                                   ↘ Detector
+//                         TX2 ──────────────────↗
+const NODES = [
+  { id:'src',     name:'信号源',    icon:'〇', col:'#4f8ef7', kind:'TX',      val:'+20.0', unit:'dBm',  layer:0, fw:true },
+  { id:'pa',      name:'PA放大器', icon:'⚡', col:'#4f8ef7', kind:'TX',      val:'+43.0', unit:'dBm',  layer:1, fw:true },
+  { id:'coupler', name:'定向耦合器',icon:'⊕', col:'#c084fc', kind:'COUPLER', val:null,    unit:'',     layer:2, fw:true, type:'split' },
+  { id:'filter',  name:'带通滤波器',icon:'◫', col:'#f76b4f', kind:'LOSS',    val:'42.5',  unit:'dBm',  layer:3, lane:'L' },
+  { id:'det',     name:'功率检测器',icon:'📊', col:'#4fd1a5', kind:'RX',      val:'23.0',  unit:'dBm',  layer:3, lane:'R' },
+  { id:'tx2',     name:'辅助TX源', icon:'〇', col:'#4f8ef7', kind:'TX',      val:'+35.0', unit:'dBm',  layer:4, lane:'R' },
+  { id:'cmb',     name:'合路器',   icon:'⊗', col:'#f59e0b', kind:'COMBINER',val:null,    unit:'',     layer:5, fw:true, type:'merge' },
+  { id:'ant',     name:'发射天线', icon:'△', col:'#4f8ef7', kind:'TX',      val:'+57.0', unit:'EIRP', layer:6, fw:true },
+];
+
+const EDGES = [
+  { from:'src',     fp:'out',     to:'pa',      tp:'in',  lbl:null },
+  { from:'pa',      fp:'out',     to:'coupler', tp:'in',  lbl:null },
+  { from:'coupler', fp:'through', to:'filter',  tp:'in',  lbl:'−0.5dB' },
+  { from:'coupler', fp:'coupled', to:'det',     tp:'in',  lbl:'−20dB' },
+  { from:'filter',  fp:'out',     to:'cmb',     tp:'in1', lbl:null },
+  { from:'tx2',     fp:'out',     to:'cmb',     tp:'in2', lbl:null },
+  { from:'cmb',     fp:'out',     to:'ant',     tp:'in',  lbl:null },
+];
+
+function getRect(n) {
+  const y = PAD + n.layer * LH;
+  if (n.fw)         return { x:0,       y, w:FW, h:NH };
+  if (n.lane==='L') return { x:0,       y, w:LW, h:NH };
+  return              { x:LW+LG,     y, w:RW, h:NH };
+}
+
+function portPt(n, port) {
+  const r = getRect(n);
+  const cx = r.x + r.w/2;
+  if (n.type==='split') {
+    if (port==='in')      return [cx,   r.y];
+    if (port==='through') return [LCX,  r.y+NH];
+    if (port==='coupled') return [RCX,  r.y+NH];
+  }
+  if (n.type==='merge') {
+    if (port==='in1') return [LCX,  r.y];
+    if (port==='in2') return [RCX,  r.y];
+    if (port==='out') return [cx,   r.y+NH];
+  }
+  return port==='in' ? [cx, r.y] : [cx, r.y+NH];
+}
+
+function makePath([x1,y1], [x2,y2]) {
+  if (Math.abs(x1-x2) < 2) return `M${x1},${y1}L${x2},${y2}`;
+  const my = (y1+y2)/2;
+  return `M${x1},${y1}C${x1},${my} ${x2},${my} ${x2},${y2}`;
+}
+
+// ── Problem Diagram ─────────────────────────────────────────
+function ProblemDiagram() {
+  return (
+    <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+      {/* Tree — fails */}
+      <div style={{ flex:'1 1 220px', background:'#0e1020', borderRadius:12, border:'1px solid #1c1f32', padding:'12px 14px' }}>
+        <div style={{ fontSize:10, fontWeight:800, color:'#ef4444', textTransform:'uppercase', letterSpacing:.8, marginBottom:8 }}>✗ 树形结构</div>
+        <svg width="200" height="140" viewBox="0 0 200 140" style={{display:'block',overflow:'visible'}}>
+          {/* Coupler node */}
+          <rect x="70" y="0" width="60" height="24" rx="5" fill="#c084fc22" stroke="#c084fc66" strokeWidth="1.5"/>
+          <text x="100" y="16" textAnchor="middle" fontSize="10" fill="#c084fc" fontWeight="700">耦合器</text>
+          {/* Split lines */}
+          <line x1="100" y1="24" x2="60" y2="48" stroke="#252840" strokeWidth="1.5"/>
+          <line x1="100" y1="24" x2="140" y2="48" stroke="#252840" strokeWidth="1.5"/>
+          {/* Filter */}
+          <rect x="25" y="48" width="70" height="24" rx="5" fill="#f76b4f22" stroke="#f76b4f66" strokeWidth="1.5"/>
+          <text x="60" y="64" textAnchor="middle" fontSize="10" fill="#f76b4f" fontWeight="700">滤波器</text>
+          {/* Detector */}
+          <rect x="105" y="48" width="70" height="24" rx="5" fill="#4fd1a522" stroke="#4fd1a566" strokeWidth="1.5"/>
+          <text x="140" y="64" textAnchor="middle" fontSize="10" fill="#4fd1a5" fontWeight="700">检测器</text>
+          {/* Filter → ??? */}
+          <line x1="60" y1="72" x2="60" y2="96" stroke="#252840" strokeWidth="1.5"/>
+          {/* TX2 */}
+          <rect x="0" y="96" width="55" height="24" rx="5" fill="#4f8ef722" stroke="#4f8ef766" strokeWidth="1.5"/>
+          <text x="27" y="112" textAnchor="middle" fontSize="10" fill="#4f8ef7" fontWeight="700">辅助TX</text>
+          {/* Both → Combiner (impossible in tree) */}
+          <line x1="55" y1="108" x2="85" y2="108" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3 2"/>
+          <line x1="60" y1="96" x2="85" y2="108" stroke="#252840" strokeWidth="1.5"/>
+          <rect x="85" y="96" width="60" height="24" rx="5" fill="#f59e0b22" stroke="#ef444466" strokeWidth="1.5"/>
+          <text x="115" y="112" textAnchor="middle" fontSize="10" fill="#ef4444" fontWeight="700">合路器?</text>
+          {/* X mark */}
+          <text x="68" y="107" fontSize="13" fill="#ef4444" fontWeight="800">✗</text>
+          <text x="150" y="138" fontSize="9" fill="#ef444488">需要2个父节点 → 违反树结构</text>
+        </svg>
+      </div>
+
+      {/* DAG — works */}
+      <div style={{ flex:'1 1 220px', background:'#0e1020', borderRadius:12, border:'1px solid #1c1f32', padding:'12px 14px' }}>
+        <div style={{ fontSize:10, fontWeight:800, color:'#22c55e', textTransform:'uppercase', letterSpacing:.8, marginBottom:8 }}>✓ 端口连接图 (DAG)</div>
+        <svg width="200" height="140" viewBox="0 0 200 140" style={{display:'block',overflow:'visible'}}>
+          {/* Coupler */}
+          <rect x="70" y="0" width="60" height="24" rx="5" fill="#c084fc22" stroke="#c084fc66" strokeWidth="1.5"/>
+          <text x="100" y="16" textAnchor="middle" fontSize="10" fill="#c084fc" fontWeight="700">耦合器</text>
+          {/* Coupler out ports */}
+          <circle cx="85" cy="24" r="3" fill="#4f8ef7"/>
+          <circle cx="115" cy="24" r="3" fill="#c084fc"/>
+          <text x="76" y="34" fontSize="8" fill="#4f8ef7aa" fontFamily="monospace">thru</text>
+          <text x="108" y="34" fontSize="8" fill="#c084fcaa" fontFamily="monospace">coup</text>
+          {/* Lines from coupler */}
+          <line x1="85" y1="24" x2="50" y2="48" stroke="#4f8ef788" strokeWidth="1.5"/>
+          <line x1="115" y1="24" x2="150" y2="48" stroke="#c084fc88" strokeWidth="1.5" strokeDasharray="4 2"/>
+          {/* Filter */}
+          <rect x="15" y="48" width="70" height="24" rx="5" fill="#f76b4f22" stroke="#f76b4f66" strokeWidth="1.5"/>
+          <text x="50" y="64" textAnchor="middle" fontSize="10" fill="#f76b4f" fontWeight="700">滤波器</text>
+          {/* Detector */}
+          <rect x="115" y="48" width="70" height="24" rx="5" fill="#4fd1a522" stroke="#4fd1a566" strokeWidth="1.5"/>
+          <text x="150" y="64" textAnchor="middle" fontSize="10" fill="#4fd1a5" fontWeight="700">检测器</text>
+          {/* TX2 */}
+          <rect x="115" y="84" width="70" height="22" rx="5" fill="#4f8ef722" stroke="#4f8ef766" strokeWidth="1.5"/>
+          <text x="150" y="99" textAnchor="middle" fontSize="10" fill="#4f8ef7" fontWeight="700">辅助TX</text>
+          {/* Filter → Combiner */}
+          <line x1="50" y1="72" x2="80" y2="108" stroke="#f76b4f88" strokeWidth="1.5"/>
+          {/* TX2 → Combiner */}
+          <line x1="150" y1="106" x2="120" y2="108" stroke="#4f8ef788" strokeWidth="1.5"/>
+          {/* Combiner */}
+          <rect x="70" y="108" width="60" height="24" rx="5" fill="#f59e0b22" stroke="#f59e0b66" strokeWidth="1.5"/>
+          <text x="100" y="124" textAnchor="middle" fontSize="10" fill="#f59e0b" fontWeight="700">合路器</text>
+          {/* In port dots */}
+          <circle cx="80" cy="108" r="3" fill="#f76b4f"/>
+          <circle cx="120" cy="108" r="3" fill="#4f8ef7"/>
+          <text x="73" y="106" fontSize="7" fill="#f76b4faa" fontFamily="monospace">in1</text>
+          <text x="112" y="106" fontSize="7" fill="#4f8ef7aa" fontFamily="monospace">in2</text>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ── Data Model Code Block ────────────────────────────────────
+function DataModelBlock() {
+  const S = { // token styles
+    key:  { color:'#4f8ef7' },
+    str:  { color:'#c084fc' },
+    port: { color:'#4fd1a5' },
+    num:  { color:'#f59e0b' },
+    cmt:  { color:'#2d3150' },
+    dim:  { color:'#3d4463' },
+  };
+  return (
+    <div style={{ background:'#0e1020', borderRadius:12, border:'1px solid #1c1f32', padding:'14px 16px', fontFamily:"'SF Mono','Fira Code',monospace", fontSize:11, lineHeight:1.8, overflow:'auto' }}>
+      <div style={S.cmt}>// 每个器件定义端口列表</div>
+      <div style={S.dim}>{'{'}</div>
+      <div style={{ paddingLeft:16 }}>
+        <span style={S.key}>id</span><span style={S.dim}>: </span><span style={S.str}>"coupler"</span><span style={S.dim}>,</span><br/>
+        <span style={S.key}>kind</span><span style={S.dim}>: </span><span style={S.str}>"COUPLER"</span><span style={S.dim}>,</span><br/>
+        <span style={S.key}>ports</span><span style={S.dim}>: {'{'}</span>
+        <span style={S.port}>in</span><span style={S.dim}>: </span><span style={S.str}>"input"</span><span style={S.dim}>, </span>
+        <span style={S.port}>through</span><span style={S.dim}>: </span><span style={S.str}>"output"</span><span style={S.dim}>, </span>
+        <span style={S.port}>coupled</span><span style={S.dim}>: </span><span style={S.str}>"output"</span><span style={S.dim}>{' }'}</span>
+      </div>
+      <div style={S.dim}>{'}'}</div>
+      <br/>
+      <div style={S.cmt}>// 连接表描述任意网络拓扑</div>
+      <div style={S.key}>connections<span style={S.dim}>: [</span></div>
+      {[
+        [['coupler','through','#c084fc'],['filter','in','#f76b4f'],'−0.5dB 插入损耗'],
+        [['coupler','coupled','#c084fc'],['detector','in','#4fd1a5'],'−20dB 耦合'],
+        [['filter','out','#f76b4f'],['combiner','in1','#f59e0b'],''],
+        [['tx2','out','#4f8ef7'],['combiner','in2','#f59e0b'],'独立信号源'],
+        [['combiner','out','#f59e0b'],['antenna','in','#4f8ef7'],''],
+      ].map(([f, t, lbl], i) => (
+        <div key={i} style={{ paddingLeft:16 }}>
+          <span style={S.dim}>{'{ '}</span>
+          <span style={{ color: f[2] }}>{f[0]}</span>
+          <span style={S.dim}>.</span>
+          <span style={S.port}>{f[1]}</span>
+          <span style={S.dim}> → </span>
+          <span style={{ color: t[2] }}>{t[0]}</span>
+          <span style={S.dim}>.</span>
+          <span style={S.port}>{t[1]}</span>
+          <span style={S.dim}>{' },'}</span>
+          {lbl && <span style={S.cmt}> // {lbl}</span>}
+        </div>
+      ))}
+      <span style={S.dim}>]</span>
+    </div>
+  );
+}
+
+// ── Interactive Swimlane Phone ───────────────────────────────
+function SwimlanePhone() {
+  const [selId, setSelId] = React.useState(null);
+  const totalH = PAD + 7*LH + NH + PAD; // ≈ 492
+
+  const activeEdges = selId ? EDGES.filter(e => e.from===selId || e.to===selId) : [];
+  const activeSet   = new Set(activeEdges.map(e => `${e.from}→${e.to}`));
+  const connSet     = new Set(activeEdges.flatMap(e => [e.from, e.to]));
+  const isDimmed    = id => selId && !connSet.has(id) && selId !== id;
+
+  const byId = id => NODES.find(n => n.id === id);
+
+  return (
+    <div className="phone">
+      <div className="phone-inner">
+        <div className="topbar">
+          <span className="tb-back">‹</span>
+          <span className="tb-title">工作流编辑</span>
+          <span style={{ fontSize:9, fontWeight:800, padding:'2px 7px', borderRadius:9999, background:'#c084fc18', color:'#c084fc', border:'1px solid #c084fc33' }}>端口连接图</span>
+        </div>
+
+        {/* Hint bar */}
+        <div style={{ padding:'5px 12px', background:'#0e1020', borderBottom:'1px solid #252840', flexShrink:0, textAlign:'center', fontSize:9, color:'#3d4463' }}>
+          点击任意器件查看端口连接
+        </div>
+
+        {/* Swimlane canvas */}
+        <div style={{ flex:1, overflow:'hidden', padding:'0 8px', position:'relative' }}>
+          <div style={{ width:FW, margin:'0 auto', position:'relative', height:totalH }}>
+
+            {/* SVG: connection lines + port dots */}
+            <svg style={{ position:'absolute', top:0, left:0, width:FW, height:totalH, pointerEvents:'none', zIndex:1 }}
+              viewBox={`0 0 ${FW} ${totalH}`}>
+
+              {/* Lane divider (faint, only in branch zone) */}
+              <line x1={LW+LG/2} y1={PAD + 2.5*LH} x2={LW+LG/2} y2={PAD + 5*LH}
+                stroke="#1c1f32" strokeWidth="1" strokeDasharray="3 3" opacity="0.6"/>
+
+              {/* Lane labels */}
+              <text x={LCX} y={PAD + 2.8*LH} textAnchor="middle" fontSize="8" fill="#1e2235" fontWeight="700">主路径</text>
+              <text x={RCX} y={PAD + 2.8*LH} textAnchor="middle" fontSize="8" fill="#1e2235" fontWeight="700">分支</text>
+
+              {/* Edges */}
+              {EDGES.map(e => {
+                const fn  = byId(e.from), tn = byId(e.to);
+                const p1  = portPt(fn, e.fp), p2 = portPt(tn, e.tp);
+                const eid = `${e.from}→${e.to}`;
+                const act = activeSet.has(eid);
+                const dim = selId && !act;
+                return (
+                  <g key={eid}>
+                    <path d={makePath(p1, p2)} fill="none"
+                      stroke={act ? fn.col : '#252840'}
+                      strokeWidth={act ? 2 : 1.5}
+                      opacity={dim ? 0.1 : act ? 1 : 0.6}
+                    />
+                    {act && e.lbl && (
+                      <text x={(p1[0]+p2[0])/2+5} y={(p1[1]+p2[1])/2}
+                        fontSize="8" fill={fn.col} fontFamily="monospace" fontWeight="700">{e.lbl}</text>
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* Port indicator dots when node selected */}
+              {selId && activeEdges.flatMap((e, ei) => {
+                const fn = byId(e.from), tn = byId(e.to);
+                return [
+                  { pt: portPt(fn, e.fp), col: fn.col, lbl: e.fp,  side: 'R' },
+                  { pt: portPt(tn, e.tp), col: tn.col, lbl: e.tp,  side: 'L' },
+                ].map((p, pi) => (
+                  <g key={`${ei}-${pi}`}>
+                    <circle cx={p.pt[0]} cy={p.pt[1]} r={4} fill={p.col} opacity={0.9}/>
+                    <text
+                      x={p.side==='R' ? p.pt[0]+6 : p.pt[0]-6}
+                      y={p.pt[1]+3}
+                      textAnchor={p.side==='R' ? 'start' : 'end'}
+                      fontSize="7" fill={p.col} fontFamily="monospace" fontWeight="700"
+                    >{p.lbl}</text>
+                  </g>
+                ));
+              })}
+
+              {/* Arrow heads on active paths */}
+              {selId && activeEdges.map(e => {
+                const fn = byId(e.from), tn = byId(e.to);
+                const [ax, ay] = portPt(tn, e.tp);
+                return (
+                  <polygon key={`arr-${e.from}`}
+                    points={`${ax},${ay} ${ax-4},${ay-7} ${ax+4},${ay-7}`}
+                    fill={fn.col} opacity={0.8}/>
+                );
+              })}
+            </svg>
+
+            {/* Node cards */}
+            {NODES.map(n => {
+              const r   = getRect(n);
+              const sel = selId === n.id;
+              const dim = isDimmed(n.id);
+              return (
+                <div key={n.id}
+                  onClick={() => setSelId(selId===n.id ? null : n.id)}
+                  style={{
+                    position:'absolute', left:r.x, top:r.y, width:r.w, height:NH,
+                    zIndex:2, borderRadius:9, background: sel ? '#1c2235' : '#1c1f32',
+                    border: `1.5px solid ${sel ? n.col : n.col+'2a'}`,
+                    boxShadow: sel ? `0 0 0 2px ${n.col}28, 0 2px 12px ${n.col}18` : 'none',
+                    opacity: dim ? 0.18 : 1,
+                    cursor: 'pointer',
+                    display:'flex', alignItems:'center', gap:6, padding:'0 8px',
+                    transition:'opacity 180ms, border-color 150ms, box-shadow 150ms',
+                  }}>
+                  <div style={{ width:22, height:22, borderRadius:5, background:n.col+'20',
+                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>
+                    {n.icon}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    {r.w >= 120 && <div style={{ fontSize:8, fontWeight:800, color:n.col, textTransform:'uppercase', letterSpacing:.4, lineHeight:1.1 }}>{n.kind}</div>}
+                    <div style={{ fontSize: r.w<100 ? 9 : 10, fontWeight:600, color:'#d4dcee', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.name}</div>
+                  </div>
+                  {n.val && r.w > 85 && (
+                    <div style={{ textAlign:'right', flexShrink:0 }}>
+                      <div style={{ fontSize:11, fontWeight:800, color:n.col, fontFamily:'monospace', lineHeight:1.1 }}>{n.val}</div>
+                      <div style={{ fontSize:8, color:'#3d4463' }}>{n.unit}</div>
+                    </div>
+                  )}
+                  {(n.type==='split'||n.type==='merge') && (
+                    <div style={{ width:16, height:16, borderRadius:'50%', background:n.col+'20',
+                      border:`1px solid ${n.col}44`, display:'flex', alignItems:'center',
+                      justifyContent:'center', fontSize:9, color:n.col, flexShrink:0, fontWeight:800 }}>
+                      {n.type==='split' ? '÷' : '∪'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected node info bar */}
+        {selId && (() => {
+          const n = byId(selId);
+          const ins  = EDGES.filter(e => e.to===selId);
+          const outs = EDGES.filter(e => e.from===selId);
+          return (
+            <div style={{ padding:'8px 12px', background:'#0e1020', borderTop:'1px solid #252840', flexShrink:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:n.col }} />
+                <span style={{ fontSize:11, fontWeight:700, color:n.col }}>{n.name}</span>
+                <span style={{ fontSize:9, color:'#3d4463', fontFamily:'monospace' }}>{n.kind}</span>
+              </div>
+              <div style={{ display:'flex', gap:12, fontSize:9, color:'#475569', fontFamily:'monospace' }}>
+                {ins.length>0 && <span>← 输入：{ins.map(e=>`${e.from}.${e.fp}`).join(' · ')}</span>}
+                {outs.length>0 && <span>→ 输出：{outs.map(e=>`${e.to}.${e.tp}`).join(' · ')}</span>}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+// ── Compare Table ────────────────────────────────────────────
+function CompareTable() {
+  const rows = [
+    { dim:'合路器 (N→1)',      tree:<span className="r">✗ 不支持</span>, dag:<span className="g">✓ 原生</span> },
+    { dim:'耦合器 (1→N)',      tree:<span className="y">部分支持</span>, dag:<span className="g">✓ 原生</span> },
+    { dim:'任意 N 路功分器',   tree:<span className="r">✗</span>,        dag:<span className="g">✓</span> },
+    { dim:'多级嵌套拓扑',      tree:<span className="r">✗</span>,        dag:<span className="g">✓</span> },
+    { dim:'计算：拓扑排序 BFS',tree:<span className="g">简单遍历</span>, dag:<span className="g">Kahn 算法</span> },
+    { dim:'移动端显示',        tree:<span className="g">竖向列表</span>, dag:<span className="y">泳道 / 自由布局</span> },
+    { dim:'数据结构复杂度',    tree:<span className="g">低</span>,        dag:<span className="y">中</span> },
+  ];
+  return (
+    <div style={{ background:'#111320', borderRadius:14, overflow:'hidden', border:'1px solid #1c1f32' }}>
+      <div style={{ padding:'12px 14px', borderBottom:'1px solid #1c1f32', fontSize:13, fontWeight:800, color:'#f1f5f9' }}>树形 vs 端口连接图</div>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>树形结构 (方案C原版)</th>
+            <th>端口连接图 (DAG)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.dim}>
+              <td style={{ color:'#64748b', fontWeight:600 }}>{r.dim}</td>
+              <td>{r.tree}</td>
+              <td>{r.dag}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────
+function App() {
+  return (
+    <div className="page">
+      <h1>任意网络拓扑 · 设计探索</h1>
+      <p className="sub">
+        真实射频器件之间是<strong>任意有向无环图 (DAG)</strong>，而非树。
+        合路器的两个输入端可来自网络的任意位置，无法用父子嵌套表达。
+        本探索说明如何用<strong>端口连接模型（netlist）</strong>表达任意拓扑，
+        并在移动端以竖向泳道渲染。
+      </p>
+
+      {/* Section 1: Problem */}
+      <div className="sec">
+        <div className="sec-tag">01 · 问题</div>
+        <div className="sec-title">树形结构不能表达合路器</div>
+        <div className="sec-body">
+          合路器有 2 个输入端，它们各自来自不同的上游器件。
+          在树形结构中，一个节点只能有一个父节点，合路器则需要两个——<strong>违反树的定义</strong>。
+          DAG（有向无环图）则允许一个节点有任意数量的输入和输出端口。
+        </div>
+        <ProblemDiagram />
+      </div>
+
+      {/* Section 2: Data model */}
+      <div className="sec">
+        <div className="sec-tag">02 · 数据模型</div>
+        <div className="sec-title">端口连接模型（Netlist）</div>
+        <div className="row">
+          <div className="col-l">
+            <div className="sec-body">
+              每个器件声明其<strong>端口列表</strong>（输入/输出），
+              连接关系由独立的 <code>connections[]</code> 数组描述——
+              每条连接指定「从哪个器件的哪个端口」到「哪个器件的哪个端口」。
+              这与 SPICE / ADS / AWR 的 netlist 模型一致，可表达任意拓扑。
+            </div>
+            <div className="callout">
+              <strong>「下一个器件」如何定义？</strong><br/>
+              不再是「节点的下一个节点」，而是「某端口的连接目标」。
+              查询 <code>connections</code> 表：<code>filter(c =&gt; c.from === nodeId)</code>
+              即得该器件所有输出连接，每条连接都指向明确的目标端口。
+            </div>
+          </div>
+          <div className="col-r">
+            <DataModelBlock />
+          </div>
+        </div>
+      </div>
+
+      {/* Section 3: Interactive swimlane */}
+      <div className="sec">
+        <div className="sec-tag">03 · 移动端显示</div>
+        <div className="sec-title">竖向泳道视图（自动排布）</div>
+        <div className="row" style={{ alignItems:'flex-start' }}>
+          <div className="col-l" style={{ paddingTop:4 }}>
+            <div className="sec-body">
+              对 DAG 做拓扑排序后，将节点按层级分配到竖向泳道：
+            </div>
+            <ul style={{ marginTop:10, paddingLeft:0, listStyle:'none', display:'flex', flexDirection:'column', gap:6 }}>
+              {[
+                ['单输入单输出节点','沿当前泳道直线向下'],
+                ['分路节点（耦合器/功分器）','生成新泳道，各输出端口独占一条'],
+                ['合路节点（合路器/加法器）','所有输入泳道收束回单泳道'],
+                ['独立源节点（辅助TX等）','在最近空闲泳道就近放置'],
+              ].map(([k,v]) => (
+                <li key={k} style={{ fontSize:12, color:'#64748b', display:'flex', gap:8, alignItems:'flex-start' }}>
+                  <span style={{ color:'#4f8ef7', flexShrink:0, marginTop:1 }}>→</span>
+                  <span><strong style={{color:'#94a3b8'}}>{k}</strong>：{v}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="callout" style={{ marginTop:12 }}>
+              <strong>编辑交互（连接端口）：</strong><br/>
+              长按器件的输出端口圆点 → 系统高亮所有兼容输入端口 → 拖动到目标端口完成连接。
+              断开连接：点击连接线 → 删除。
+              新增器件：点击某端口旁的「+」→ 弹出模块选择器 → 系统自动创建连接并插入泳道。
+            </div>
+          </div>
+          <div style={{ flexShrink:0 }}>
+            <SwimlanePhone />
+          </div>
+        </div>
+      </div>
+
+      {/* Section 4: Compare */}
+      <div className="sec">
+        <div className="sec-tag">04 · 对比总结</div>
+        <div className="sec-title">从树形升级到 DAG</div>
+        <CompareTable />
+        <div className="callout" style={{ marginTop:14 }}>
+          <strong>实施路径（最小改动量）：</strong><br/>
+          ① 数据层：将 <code>wf.nodes[]</code> 改为 <code>{'{nodes[], connections[]}'}</code>；
+          线性链路视作退化 DAG（每节点仅一输入一输出），现有数据无缝迁移。<br/>
+          ② 计算层：<code>RFE.evaluate()</code> 改为对 DAG 做 BFS，
+          遇到合路器时对各输入功率做功率合成 <code>10·log₁₀(Σ10^(Pᵢ/10))</code>。<br/>
+          ③ 显示层：现有竖向列表改为竖向泳道；线性工作流（无分支）显示效果与现在完全相同。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

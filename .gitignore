@@ -1,0 +1,25 @@
+# Android
+android/build/
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/*.iml
+android/.idea/
+
+# Gradle
+.gradle/
+*.apk
+*.aab
+
+# Emulator logs
+*.log
+
+# IDE / Config
+.qoder/
+.workbuddy/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

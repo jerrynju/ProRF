@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProRF · 分支工作流设计探索</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0c0e1a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'SF Pro Text', sans-serif;
+  min-height: 100vh;
+}
+.page { padding: 28px 24px 64px; max-width: 1080px; margin: 0 auto; }
+.page-title { font-size: 20px; font-weight: 800; color: #f1f5f9; margin-bottom: 4px; letter-spacing: -0.3px; }
+.page-sub { font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
+
+.canvas { display: flex; gap: 24px; overflow-x: auto; align-items: flex-start; padding-bottom: 8px; }
+.col { flex-shrink: 0; width: 292px; display: flex; flex-direction: column; gap: 10px; }
+.col-tag { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; }
+.col-head { display: flex; align-items: center; gap: 8px; }
+.col-title { font-size: 17px; font-weight: 800; color: #f1f5f9; }
+.badge-rec { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #22c55e1a; color: #22c55e; border: 1px solid #22c55e33; }
+.col-desc { font-size: 12px; color: #64748b; line-height: 1.6; }
+.pro { font-size: 11px; color: #22c55e; }
+.con { font-size: 11px; color: #f59e0b; }
+
+/* Phone */
+.phone {
+  width: 292px; height: 570px; border-radius: 38px;
+  background: #111320; border: 7px solid #252840;
+  overflow: hidden; position: relative;
+  box-shadow: 0 24px 64px #00000077, inset 0 1px 0 #ffffff08;
+  margin-top: 4px;
+}
+.phone-inner { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 13px 9px;
+  background: #161828; border-bottom: 1px solid #252840;
+  flex-shrink: 0;
+}
+.topbar-back { font-size: 17px; color: #4f8ef7; line-height: 1; }
+.topbar-title { font-size: 14px; font-weight: 700; color: #e2e8f0; flex: 1; }
+.topbar-sub { font-size: 10px; color: #475569; }
+.scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 10px 20px; }
+.scroll-area::-webkit-scrollbar { width: 0; }
+
+/* Node card */
+.nd {
+  border-radius: 10px; background: #1c1f32; border: 1.5px solid;
+  padding: 7px 9px; cursor: pointer;
+  display: flex; align-items: center; gap: 7px;
+  transition: border-color 130ms, box-shadow 130ms;
+}
+.nd-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.nd-body { flex: 1; min-width: 0; }
+.nd-kind { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.nd-name { font-size: 11px; font-weight: 600; color: #d4dcee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nd-val { text-align: right; flex-shrink: 0; }
+.nd-num { font-size: 13px; font-weight: 800; font-family: monospace; line-height: 1.1; }
+.nd-unit { font-size: 9px; color: #3d4463; }
+
+/* Connectors */
+.vln { width: 2px; background: #252840; margin: 0 auto; }
+.arrowhead { width: 0; height: 0; margin: 0 auto;
+  border-left: 5px solid transparent; border-right: 5px solid transparent; }
+.pwrbadge { font-size: 9px; font-family: monospace; font-weight: 700; padding: 1px 6px; border-radius: 6px; white-space: nowrap; display: block; width: fit-content; margin: 0 auto; }
+
+/* Comparison */
+.cmp { margin-top: 36px; background: #111320; border-radius: 16px; overflow: hidden; border: 1px solid #1c1f32; }
+.cmp-head { padding: 14px 18px; border-bottom: 1px solid #1c1f32; font-size: 14px; font-weight: 800; color: #f1f5f9; }
+.cmp table { width: 100%; border-collapse: collapse; }
+.cmp th { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 1px solid #1c1f32; }
+.cmp td { font-size: 12px; color: #94a3b8; padding: 9px 14px; border-bottom: 1px solid #1c1f32; vertical-align: middle; }
+.cmp tr:last-child td { border-bottom: none; }
+.g { color: #22c55e; } .y { color: #f59e0b; } .r { color: #ef4444; }
+.rec-row td { background: #131a13; }
+.rec-row td:last-child { color: #22c55e; }
+
+/* Callout */
+.callout { margin-top: 20px; background: #0e1020; border-radius: 14px; border: 1px solid #1c1f32; padding: 16px 18px; }
+.callout-title { font-size: 13px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
+.callout-body { font-size: 12px; color: #64748b; line-height: 1.75; }
+code { color: #c084fc; background: #1c1f32; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const C = { tx:'#4f8ef7', loss:'#f76b4f', rx:'#4fd1a5', coup:'#c084fc', warn:'#f59e0b' };
+
+/* ── Mini node card ─────────────────────────────────────── */
+function Nd({ kind, name, icon, val, unit, col, sel, compact, onClick }) {
+  const c = col || C.tx;
+  return (
+    <div className="nd" onClick={onClick}
+      style={{ borderColor: sel ? c : c+'2a', boxShadow: sel ? `0 0 0 2px ${c}28` : 'none' }}>
+      <div className="nd-icon" style={{ background: c+'20' }}>{icon}</div>
+      <div className="nd-body">
+        {!compact && <div className="nd-kind" style={{ color: c }}>{kind}</div>}
+        <div className="nd-name" style={{ fontSize: compact ? 10 : 11 }}>{name}</div>
+      </div>
+      {val != null && (
+        <div className="nd-val">
+          <div className="nd-num" style={{ color: c }}>{val}</div>
+          <div className="nd-unit">{unit}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Vertical connector ─────────────────────────────────── */
+function VC({ pwr, h = 8, col }) {
+  const c = col || C.tx;
+  return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+      <div className="vln" style={{ height: h }} />
+      {pwr != null && (
+        <div className="pwrbadge" style={{ color: c, background: c+'15', border:`1px solid ${c}28` }}>{pwr} dBm</div>
+      )}
+      <div className="vln" style={{ height: h }} />
+      <div className="arrowhead" style={{ borderTop:`6px solid #252840` }} />
+    </div>
+  );
+}
+
+/* ── Phone wrapper ──────────────────────────────────────── */
+function Phone({ title, sub, children, overlay }) {
+  return (
+    <div className="phone">
+      <div className="phone-inner">
+        <div className="topbar">
+          <span className="topbar-back">‹</span>
+          <div style={{ flex:1 }}>
+            <div className="topbar-title">{title}</div>
+            {sub && <div className="topbar-sub">{sub}</div>}
+          </div>
+        </div>
+        <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+          <div className="scroll-area">{children}</div>
+          {overlay}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   方案 A · 端口抽屉
+   耦合器节点内嵌端口芯片，点击展开底部抽屉查看分支链路
+══════════════════════════════════════════════════════════ */
+function ApproachA() {
+  const [drawer, setDrawer] = React.useState(null);
+  const [sel, setSel] = React.useState(null);
+
+  const Drawer = drawer && (
+    <div style={{
+      position:'absolute', bottom:0, left:0, right:0,
+      background:'#161828', borderTop:'1px solid #252840',
+      borderRadius:'16px 16px 0 0',
+      boxShadow:'0 -8px 32px #00000088',
+      padding:'12px 10px 16px', zIndex:10,
+    }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+        <div>
+          <div style={{ fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:0.5,
+            color: drawer==='main' ? C.tx : C.coup, marginBottom:2 }}>
+            {drawer==='main' ? '↓ 透传端链路' : '⤴ 耦合端链路'}
+          </div>
+          <div style={{ fontSize:9, color:'#3d4463', fontFamily:'monospace' }}>
+            {drawer==='main' ? '插入损耗 −0.5 dB · 39.5 dBm' : '耦合损耗 −20 dB · 20.0 dBm'}
+          </div>
+        </div>
+        <button onClick={() => setDrawer(null)} style={{
+          background:'#252840', border:'none', color:'#64748b',
+          borderRadius:'50%', width:22, height:22, cursor:'pointer', fontSize:13,
+          display:'flex', alignItems:'center', justifyContent:'center',
+        }}>✕</button>
+      </div>
+      {drawer === 'main' ? (
+        <>
+          <Nd kind="LOSS" name="带通滤波器" icon="🔷" val="37.5" unit="dBm" col={C.loss} />
+          <VC h={6} />
+          <Nd kind="TX" name="发射天线" icon="📶" val="+52.5" unit="EIRP" col={C.tx} />
+        </>
+      ) : (
+        <Nd kind="RX" name="功率检测器" icon="📊" val="20.0" unit="dBm" col={C.rx} />
+      )}
+      <div style={{ marginTop:10, textAlign:'center', fontSize:9, color:'#2d3150' }}>点击节点编辑 · 长按插入</div>
+    </div>
+  );
+
+  return (
+    <Phone title="工作流编辑" sub="定向耦合器场景" overlay={Drawer}>
+      <Nd kind="TX" name="功率放大器" icon="🔊" val="+40" unit="dBm" col={C.tx} sel={sel==='pa'} onClick={() => setSel('pa')} />
+      <VC pwr={40} />
+
+      {/* Coupler node with port chips */}
+      <div style={{ borderRadius:10, background:'#1c1f32', border:`1.5px solid ${C.coup}44`, overflow:'hidden', cursor:'pointer' }}
+        onClick={() => setSel(s => s==='cp' ? null : 'cp')}>
+        <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 9px', borderBottom:`1px solid ${C.coup}18` }}>
+          <div style={{ width:26, height:26, borderRadius:6, background:C.coup+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>⚡</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:8, fontWeight:800, color:C.coup, textTransform:'uppercase' }}>多端口</div>
+            <div style={{ fontSize:11, fontWeight:700, color:'#d4dcee' }}>定向耦合器</div>
+          </div>
+          <div style={{ fontSize:10, color:C.coup, fontFamily:'monospace', fontWeight:700 }}>2 端口</div>
+        </div>
+        {/* Port chips */}
+        <div style={{ display:'flex', gap:6, padding:'7px 9px' }}>
+          <button onClick={e => { e.stopPropagation(); setDrawer('main'); }} style={{
+            flex:1, padding:'5px 7px', borderRadius:7,
+            background:C.tx+'15', border:`1.5px solid ${C.tx}33`,
+            color:C.tx, fontSize:10, fontWeight:700, cursor:'pointer', textAlign:'left',
+          }}>
+            <div>↓ 透传端</div>
+            <div style={{ fontSize:9, color:'#475569', fontFamily:'monospace', fontWeight:400 }}>−0.5 dB</div>
+          </button>
+          <button onClick={e => { e.stopPropagation(); setDrawer('coupled'); }} style={{
+            flex:1, padding:'5px 7px', borderRadius:7,
+            background:C.coup+'15', border:`1.5px dashed ${C.coup}44`,
+            color:C.coup, fontSize:10, fontWeight:700, cursor:'pointer', textAlign:'left',
+          }}>
+            <div>⤴ 耦合端</div>
+            <div style={{ fontSize:9, color:'#475569', fontFamily:'monospace', fontWeight:400 }}>−20 dB →</div>
+          </button>
+        </div>
+      </div>
+
+      <VC pwr={39.5} />
+      <Nd kind="LOSS" name="带通滤波器" icon="🔷" val="37.5" unit="dBm" col={C.loss} sel={sel==='flt'} onClick={() => setSel('flt')} />
+      <VC h={6} />
+      <Nd kind="TX" name="发射天线" icon="📶" val="+52.5" unit="EIRP" col={C.tx} sel={sel==='ant'} onClick={() => setSel('ant')} />
+    </Phone>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   方案 B · Git 分叉列
+   耦合器处分叉为主/次两列，像 git 分支图
+══════════════════════════════════════════════════════════ */
+function ApproachB() {
+  const [sel, setSel] = React.useState(null);
+  const s = id => ({ sel: sel===id, onClick: () => setSel(s => s===id ? null : id) });
+
+  return (
+    <Phone title="工作流编辑" sub="Git 分叉树视图">
+      <Nd kind="TX" name="功率放大器" icon="🔊" val="+40" unit="dBm" col={C.tx} {...s('pa')} />
+
+      {/* Pre-fork connector */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+        <div className="vln" style={{ height:8 }} />
+        <div className="pwrbadge" style={{ color:C.tx, background:C.tx+'15', border:`1px solid ${C.tx}28` }}>40.0 dBm</div>
+        <div className="vln" style={{ height:8 }} />
+      </div>
+
+      {/* Coupler full-width */}
+      <div style={{ borderRadius:10, background:'#1c1f32', border:`2px solid ${C.coup}55`, padding:'7px 9px', display:'flex', alignItems:'center', gap:7 }}>
+        <div style={{ width:26, height:26, borderRadius:6, background:C.coup+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>⚡</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:8, fontWeight:800, color:C.coup, textTransform:'uppercase' }}>多端口</div>
+          <div style={{ fontSize:11, fontWeight:700, color:'#d4dcee' }}>定向耦合器</div>
+        </div>
+        <div style={{ display:'flex', gap:4 }}>
+          <span style={{ fontSize:9, padding:'2px 5px', borderRadius:5, background:C.tx+'20', color:C.tx, fontWeight:700 }}>透传</span>
+          <span style={{ fontSize:9, padding:'2px 5px', borderRadius:5, background:C.coup+'20', color:C.coup, fontWeight:700 }}>耦合</span>
+        </div>
+      </div>
+
+      {/* SVG fork lines */}
+      <svg height="26" style={{ width:'100%', display:'block', overflow:'visible' }} viewBox="0 0 272 26">
+        <line x1="136" y1="0" x2="136" y2="13" stroke="#252840" strokeWidth="2"/>
+        <line x1="136" y1="13" x2="80"  y2="13" stroke="#252840" strokeWidth="2"/>
+        <line x1="136" y1="13" x2="218" y2="13" stroke={C.coup} strokeWidth="1.5" strokeDasharray="4 3" opacity=".7"/>
+        <line x1="80"  y1="13" x2="80"  y2="26" stroke="#252840" strokeWidth="2"/>
+        <line x1="218" y1="13" x2="218" y2="26" stroke={C.coup} strokeWidth="1.5" strokeDasharray="4 3" opacity=".7"/>
+        <text x="16"  y="11" fontSize="8" fill={C.tx}   fontFamily="monospace" fontWeight="700">−0.5 dB</text>
+        <text x="148" y="11" fontSize="8" fill={C.coup} fontFamily="monospace" fontWeight="700">−20 dB</text>
+      </svg>
+
+      {/* Two-column branch */}
+      <div style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+        {/* Main column (60%) */}
+        <div style={{ flex:60, display:'flex', flexDirection:'column', gap:0 }}>
+          <div style={{ fontSize:8, fontWeight:800, color:C.tx, textTransform:'uppercase', letterSpacing:0.5, marginBottom:5 }}>
+            ↓ 透传端
+          </div>
+          <Nd kind="LOSS" name="带通滤波器" icon="🔷" val="37.5" unit="dBm" col={C.loss} {...s('flt')} />
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+            <div className="vln" style={{ height:6 }} />
+            <div className="arrowhead" style={{ borderTop:`5px solid #252840` }} />
+          </div>
+          <Nd kind="TX" name="发射天线" icon="📶" val="+52" unit="EIRP" col={C.tx} {...s('ant')} />
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+            <div className="vln" style={{ height:6 }} />
+          </div>
+          <div style={{ borderRadius:8, background:'#12141e', border:'1px dashed #252840', padding:'6px 8px', textAlign:'center', fontSize:9, color:'#2d3150' }}>
+            主路末端
+          </div>
+        </div>
+        {/* Vertical divider */}
+        <div style={{ width:1, background:'#1c1f32', alignSelf:'stretch', margin:'14px 0' }} />
+        {/* Coupled column (40%) */}
+        <div style={{ flex:40, display:'flex', flexDirection:'column', gap:0 }}>
+          <div style={{ fontSize:8, fontWeight:800, color:C.coup, textTransform:'uppercase', letterSpacing:0.5, marginBottom:5 }}>
+            ⤴ 耦合端
+          </div>
+          <Nd kind="RX" name="功率检测器" icon="📊" val="20.0" unit="dBm" col={C.rx} compact {...s('det')} />
+          <div style={{ marginTop:8, borderRadius:7, background:'#12141e', border:'1px dashed #252840', padding:'5px', textAlign:'center', fontSize:9, color:'#2d3150' }}>
+            分支末端
+          </div>
+        </div>
+      </div>
+
+      {/* Re-merge hint */}
+      <div style={{ marginTop:14, display:'flex', alignItems:'center', gap:8 }}>
+        <div style={{ flex:1, height:1, background:'#1c1f32' }} />
+        <div style={{ fontSize:9, color:'#2d3150', whiteSpace:'nowrap' }}>↑ 合路器可在此汇合</div>
+        <div style={{ flex:1, height:1, background:'#1c1f32' }} />
+      </div>
+    </Phone>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   方案 C · 树形大纲 (推荐)
+   耦合器/合路器作父节点，各端口子链路可折叠，
+   支持任意层级嵌套，天然表达合路器多路输入
+══════════════════════════════════════════════════════════ */
+function ApproachC() {
+  const [exp, setExp] = React.useState({ main:true, coup:false });
+  const [sel, setSel] = React.useState(null);
+  const toggle = k => setExp(e => ({ ...e, [k]:!e[k] }));
+  const s = id => ({ sel:sel===id, onClick:() => setSel(s => s===id?null:id) });
+
+  return (
+    <Phone title="工作流编辑" sub="树形大纲视图">
+      <Nd kind="TX" name="功率放大器" icon="🔊" val="+40" unit="dBm" col={C.tx} {...s('pa')} />
+
+      {/* Trunk line to coupler */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+        <div className="vln" style={{ height:8 }} />
+        <div className="pwrbadge" style={{ color:C.tx, background:C.tx+'15', border:`1px solid ${C.tx}28` }}>40.0 dBm</div>
+        <div className="vln" style={{ height:8 }} />
+        <div className="arrowhead" style={{ borderTop:`6px solid #252840` }} />
+      </div>
+
+      {/* Coupler as expandable parent node */}
+      <div style={{ borderRadius:10, background:'#1c1f32', border:`2px solid ${C.coup}55`, overflow:'hidden' }}>
+        {/* Coupler header */}
+        <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 9px', borderBottom:`1px solid ${C.coup}18` }}>
+          <div style={{ width:26, height:26, borderRadius:6, background:C.coup+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>⚡</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:8, fontWeight:800, color:C.coup, textTransform:'uppercase' }}>多端口节点</div>
+            <div style={{ fontSize:11, fontWeight:700, color:'#d4dcee' }}>定向耦合器</div>
+          </div>
+          <div style={{ fontSize:9, color:'#3d4463', fontFamily:'monospace' }}>2 端口</div>
+        </div>
+
+        {/* Port A: 透传端 (expanded) */}
+        <div>
+          <button onClick={() => toggle('main')}
+            style={{ width:'100%', display:'flex', alignItems:'center', gap:6, padding:'7px 9px 7px 11px',
+              background:'none', border:'none', cursor:'pointer', borderBottom:'1px solid #13151e' }}>
+            <div style={{ width:2, height:14, background:C.tx+'66', borderRadius:1, flexShrink:0 }} />
+            <span style={{ fontSize:7, color:'#3d4463', display:'inline-block', transition:'transform 200ms',
+              transform: exp.main ? 'rotate(90deg)' : '' }}>▶</span>
+            <div style={{ flex:1, textAlign:'left' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:C.tx }}>透传端口</div>
+              <div style={{ fontSize:9, color:'#3d4463', fontFamily:'monospace' }}>−0.5 dB · 39.5 dBm · 2 节点</div>
+            </div>
+            <span onClick={e => { e.stopPropagation(); }} style={{
+              fontSize:13, color:C.tx, background:C.tx+'18',
+              borderRadius:'50%', width:18, height:18, cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            }}>+</span>
+          </button>
+          {exp.main && (
+            <div style={{ paddingLeft:16, paddingRight:9, paddingBottom:8,
+              borderLeft:`2px solid ${C.tx}33`, marginLeft:11, borderBottom:'1px solid #13151e' }}>
+              <div style={{ height:6 }} />
+              <Nd kind="LOSS" name="带通滤波器" icon="🔷" val="37.5" unit="dBm" col={C.loss} {...s('flt')} />
+              <VC h={5} />
+              <Nd kind="TX" name="发射天线" icon="📶" val="+52" unit="EIRP" col={C.tx} {...s('ant')} />
+            </div>
+          )}
+        </div>
+
+        {/* Port B: 耦合端 (collapsed) */}
+        <div>
+          <button onClick={() => toggle('coup')}
+            style={{ width:'100%', display:'flex', alignItems:'center', gap:6, padding:'7px 9px 7px 11px',
+              background:'none', border:'none', cursor:'pointer' }}>
+            <div style={{ width:2, height:14, background:C.coup+'66', borderRadius:1, flexShrink:0 }} />
+            <span style={{ fontSize:7, color:'#3d4463', display:'inline-block', transition:'transform 200ms',
+              transform: exp.coup ? 'rotate(90deg)' : '' }}>▶</span>
+            <div style={{ flex:1, textAlign:'left' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:C.coup }}>耦合端口</div>
+              <div style={{ fontSize:9, color:'#3d4463', fontFamily:'monospace' }}>−20 dB · 20.0 dBm · 1 节点</div>
+            </div>
+            <span onClick={e => { e.stopPropagation(); }} style={{
+              fontSize:13, color:C.coup, background:C.coup+'18',
+              borderRadius:'50%', width:18, height:18, cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            }}>+</span>
+          </button>
+          {exp.coup && (
+            <div style={{ paddingLeft:16, paddingRight:9, paddingBottom:8,
+              borderLeft:`2px solid ${C.coup}33`, marginLeft:11 }}>
+              <div style={{ height:6 }} />
+              <Nd kind="RX" name="功率检测器" icon="📊" val="20.0" unit="dBm" col={C.rx} {...s('det')} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Trunk continues after coupler */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
+        <div className="vln" style={{ height:8 }} />
+        <div className="arrowhead" style={{ borderTop:`6px solid #252840` }} />
+      </div>
+
+      {/* Combiner node example */}
+      <div style={{ borderRadius:10, background:'#1c1f32', border:`1.5px dashed ${C.warn}44`, padding:'7px 9px',
+        display:'flex', alignItems:'center', gap:7, opacity:0.7 }}>
+        <div style={{ width:26, height:26, borderRadius:6, background:C.warn+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🔀</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:8, fontWeight:800, color:C.warn, textTransform:'uppercase' }}>可插入</div>
+          <div style={{ fontSize:11, fontWeight:700, color:'#7a8199' }}>合路器 / 下一节点</div>
+        </div>
+      </div>
+    </Phone>
+  );
+}
+
+/* ── Comparison table ───────────────────────────────────── */
+function CmpTable() {
+  const rows = [
+    { dim:'移动端可读性',    a:<span className="y">●●○</span>, b:<span className="y">●●○</span>, c:<span className="g">●●●</span> },
+    { dim:'支持 N 路分支',   a:<span className="r">✗ 仅2路</span>, b:<span className="y">≤3 路</span>, c:<span className="g">任意 N</span> },
+    { dim:'合路器支持',      a:<span className="r">✗ 不支持</span>, b:<span className="y">间接</span>, c:<span className="g">原生</span> },
+    { dim:'多级嵌套',        a:<span className="r">✗</span>, b:<span className="r">✗</span>, c:<span className="g">✓</span> },
+    { dim:'功率流向可视化',  a:<span className="y">抽屉内</span>, b:<span className="g">最直观</span>, c:<span className="y">折叠内</span> },
+    { dim:'对现有编辑器改动', a:<span className="g">最小</span>, b:<span className="r">大</span>, c:<span className="y">中</span> },
+    { dim:'推荐',            a:<span>—</span>, b:<span>副视图</span>, c:<span className="g">✓ 主结构</span> },
+  ];
+  return (
+    <div className="cmp">
+      <div className="cmp-head">方案对比</div>
+      <table>
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>方案 A<br/><span style={{color:'#2d3150',fontWeight:400}}>端口抽屉</span></th>
+            <th>方案 B<br/><span style={{color:'#2d3150',fontWeight:400}}>Git 分叉</span></th>
+            <th>方案 C ★<br/><span style={{color:'#22c55e44',fontWeight:400}}>树形大纲</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r,i) => (
+            <tr key={r.dim} className={i===rows.length-1?'rec-row':''}>
+              <td style={{color:'#64748b',fontWeight:600}}>{r.dim}</td>
+              <td>{r.a}</td><td>{r.b}</td><td>{r.c}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── App ───────────────────────────────────────────────── */
+function App() {
+  const cols = [
+    {
+      tag:'方案 A', title:'端口抽屉', rec:false,
+      desc:'耦合器节点内嵌端口芯片，点击展开底部抽屉查看或编辑分支链路，主链路不中断。',
+      pro:'对现有线性编辑器改动最小', con:'分支隐藏不直观；不支持合路器多输入',
+      body:<ApproachA />,
+    },
+    {
+      tag:'方案 B', title:'Git 分叉列', rec:false,
+      desc:'耦合器处自动分叉为主/次两列，左侧主路径占 60%，右侧分支占 40%，像 git 分支树。',
+      pro:'信号流最直观，接近工程信号流图', con:'三路以上极拥挤；合路器难以用列表达',
+      body:<ApproachB />,
+    },
+    {
+      tag:'方案 C', title:'树形大纲', rec:true,
+      desc:'耦合器/合路器作为可折叠父节点，各端口子链路缩进显示，支持任意 N 路分支和多级嵌套。',
+      pro:'天然支持 N 路分支、合路器、多级级联', con:'需展开操作；功率流向不如方案 B 直观',
+      body:<ApproachC />,
+    },
+  ];
+
+  return (
+    <div className="page">
+      <div className="page-title">分支工作流 · 设计探索</div>
+      <div className="page-sub">
+        插入合路器、耦合器、功分器等多端口模块时，工作流如何在移动端显示和操作。
+        三种方案均以「1路PA → 定向耦合器 → 透传链路 + 耦合端检测器」为示例场景。
+      </div>
+
+      <div className="canvas">
+        {cols.map(col => (
+          <div key={col.tag} className="col">
+            <div className="col-tag">{col.tag}</div>
+            <div className="col-head">
+              <div className="col-title">{col.title}</div>
+              {col.rec && <span className="badge-rec">★ 推荐</span>}
+            </div>
+            <div className="col-desc">{col.desc}</div>
+            <div className="pro">✓ {col.pro}</div>
+            <div className="con">△ {col.con}</div>
+            {col.body}
+          </div>
+        ))}
+      </div>
+
+      <CmpTable />
+
+      <div className="callout">
+        <div className="callout-title">💡 实施建议</div>
+        <div className="callout-body">
+          <strong style={{color:'#e2e8f0'}}>推荐：方案 C（树形大纲）为主结构 + 方案 B（分叉列）作可切换的「信号流视图」。</strong><br/><br/>
+          数据层：将 <code>nodes[]</code> 改为树型结构，多端口节点增加 <code>ports[]</code> 字段，
+          每个 port 含 <code>loss</code>、<code>label</code>、<code>chain[]</code> 子链路。
+          合路器的 <code>ports[]</code> 是多个输入端，输出功率取矢量叠加。<br/><br/>
+          计算层：递归遍历每条端口子链路，链路预算分路独立计算，
+          合路器汇聚时用 10·log₁₀(Σ 10^(Pᵢ/10)) 求总功率。<br/><br/>
+          交互层：单击端口行展开/收起子链路；端口行右侧"+"在该端口链路中插入节点；
+          长按端口行可重命名端口标签或调整耦合参数。
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

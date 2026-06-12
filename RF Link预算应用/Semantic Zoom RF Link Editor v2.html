@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProRF · 语义缩放编辑器</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: radial-gradient(ellipse 80% 60% at 50% 20%, #0D1830 0%, #04060F 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: -apple-system, 'PingFang SC', 'SF Pro Text', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 0; height: 0; }
+@keyframes fadeUp { from { transform:translateY(5px) } to { transform:translateY(0) } }
+@keyframes popIn  { from { opacity:0; transform:scale(.92) } to { opacity:1; transform:scale(1) } }
+@keyframes pulse  { 0%,100%{opacity:.9} 50%{opacity:.45} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   THEME
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const T = {
+  bg:'#060B18', bg2:'#0C1426', bg3:'#0A1020',
+  surf:'#121E34', surf2:'#1A2A46', surf3:'#22345A',
+  prim:'#3DD8F0', primDim:'#20B8D4', onPrim:'#031018',
+  sec:'#F0B840',
+  txt1:'#E0EEF8', txt2:'#8AACCC', txt3:'#4A6888', txt4:'#2A3C58',
+  line:'#1A2A46', line2:'#0E1A30',
+  ok:'#44D86A', warn:'#F0B840', err:'#FF5555',
+  sh1:'0 2px 8px rgba(0,0,0,.5)',
+  sh2:'0 4px 20px rgba(0,0,0,.7)',
+  sh3:'0 8px 40px rgba(0,0,0,.85)',
+};
+
+/* kind palette */
+const KC = {
+  TX:   { c:'#44AAFF', t:'rgba(68,170,255,.1)',  label:'TX' },
+  AMP:  { c:'#FFA040', t:'rgba(255,160,64,.1)',  label:'AMP' },
+  CABLE:{ c:'#FF7070', t:'rgba(255,112,112,.08)',label:'CABLE' },
+  ANT:  { c:'#BB80FF', t:'rgba(187,128,255,.1)', label:'ANT' },
+  PATH: { c:'#3DD8F0', t:'rgba(61,216,240,.08)', label:'PATH' },
+  RX:   { c:'#44D86A', t:'rgba(68,216,106,.1)',  label:'RX' },
+};
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RF LINK DATA
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const NODES = [
+  { id:'tx', kind:'TX', icon:'◎', name:'发射机',
+    out:'+23.0', unit:'dBm', delta:null,
+    params:[
+      {l:'发射功率',v:'+23.0 dBm'},{l:'工作频率',v:'2.4 GHz'},
+      {l:'调制方式',v:'OFDM / 64-QAM'},{l:'相位噪声',v:'−120 dBc/Hz @ 1 kHz'},
+      {l:'发射效率',v:'38 %'},
+    ]},
+  { id:'pa', kind:'AMP', icon:'⚡', name:'功率放大器',
+    out:'+43.0', unit:'dBm', delta:'+20.0 dB',
+    params:[
+      {l:'增益',v:'+20.0 dB'},{l:'噪声系数',v:'5.2 dB'},
+      {l:'P1dB',v:'+44 dBm'},{l:'OIP3',v:'+55 dBm'},
+      {l:'工作电压',v:'5 V'},
+    ]},
+  { id:'cable', kind:'CABLE', icon:'⌁', name:'馈线',
+    out:'+42.5', unit:'dBm', delta:'−0.5 dB',
+    params:[
+      {l:'插入损耗',v:'−0.5 dB'},{l:'馈线型号',v:'LMR-400'},
+      {l:'长度',v:'5 m'},{l:'衰减系数',v:'0.1 dB/m'},
+    ]},
+  { id:'ant-tx', kind:'ANT', icon:'△', name:'发射天线',
+    out:'+57.0', unit:'EIRP', delta:'+14.5 dBi',
+    params:[
+      {l:'天线增益',v:'+14.5 dBi'},{l:'天线类型',v:'八木天线'},
+      {l:'VSWR',v:'1.4'},{l:'3 dB 波束宽',v:'30°'},
+      {l:'极化方式',v:'水平极化'},
+    ]},
+  { id:'path', kind:'PATH', icon:'◈', name:'自由空间传播',
+    out:'−43.0', unit:'dBm', delta:'−100 dB',
+    params:[
+      {l:'路径损耗',v:'−100.0 dB'},{l:'传播距离',v:'1.0 km'},
+      {l:'传播模型',v:'Friis 自由空间'},{l:'大气损耗',v:'0.01 dB/km'},
+      {l:'雨衰余量',v:'3 dB'},
+    ]},
+  { id:'ant-rx', kind:'ANT', icon:'▽', name:'接收天线',
+    out:'−28.5', unit:'dBm', delta:'+14.5 dBi',
+    params:[
+      {l:'天线增益',v:'+14.5 dBi'},{l:'天线类型',v:'八木天线'},
+      {l:'VSWR',v:'1.4'},{l:'3 dB 波束宽',v:'30°'},
+    ]},
+  { id:'lna', kind:'AMP', icon:'⚡', name:'LNA 低噪放',
+    out:'−10.5', unit:'dBm', delta:'+18.0 dB',
+    params:[
+      {l:'增益',v:'+18.0 dB'},{l:'噪声系数',v:'0.8 dB'},
+      {l:'IIP3',v:'+5 dBm'},{l:'工作电流',v:'18 mA'},
+    ]},
+  { id:'rx', kind:'RX', icon:'◎', name:'接收机',
+    out:'−60.0', unit:'dBm sens.', delta:'链路余量 +49.5 dB',
+    params:[
+      {l:'接收灵敏度',v:'−60.0 dBm'},{l:'可用链路余量',v:'+49.5 dB'},
+      {l:'接收带宽',v:'20 MHz'},{l:'最小 SNR',v:'10 dB'},
+      {l:'解调方式',v:'OFDM'},
+    ]},
+];
+
+const idxOf = id => NODES.findIndex(n => n.id === id);
+const byId  = id => NODES[idxOf(id)];
+
+/* canvas node geometry */
+const NW = 160, NH = 56;
+const CW  = 360;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   STATUS BAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function StatusBar() {
+  return (
+    <div style={{ height:28, background:T.bg3, display:'flex', alignItems:'center',
+      justifyContent:'space-between', padding:'0 18px', flexShrink:0,
+      borderBottom:`1px solid ${T.line2}` }}>
+      <span style={{ fontSize:12, fontWeight:700, color:T.txt2,
+        fontFamily:"'SF Mono','Courier New',monospace", letterSpacing:.3 }}>9:41</span>
+      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+          {[3,6,9,12].map((h,i) => (
+            <rect key={i} x={i*3.8} y={11-h} width="3" height={h} rx="1"
+              fill={i < 3 ? T.txt2 : T.txt4} opacity={i<3?.8:.4}/>
+          ))}
+        </svg>
+        <svg width="15" height="11" viewBox="0 0 15 11" fill={T.txt2} opacity=".75">
+          <path d="M7.5 2C4.4 2 1.6 3.3 0 5.4l1.4 1.4C2.8 5.2 5 4 7.5 4s4.7 1.2 6.1 2.8L15 5.4C13.4 3.3 10.6 2 7.5 2zm0 4c-1.8 0-3.5.8-4.6 2l1.4 1.4C5 8.6 6.2 8 7.5 8s2.5.6 3.3 1.4L12.2 8C11.1 6.8 9.4 6 7.5 6zm0 4c-.8 0-1.5.7-1.5 1.5S6.7 13 7.5 13 9 12.3 9 11.5 8.3 10 7.5 10z"/>
+        </svg>
+        <svg width="24" height="11" viewBox="0 0 24 11">
+          <rect x=".5" y=".5" width="20" height="10" rx="2.5" stroke={T.txt2} strokeWidth="1" opacity=".5"/>
+          <rect x="1.5" y="1.5" width="16" height="8" rx="1.5" fill={T.ok}/>
+          <rect x="21.5" y="3.5" width="2" height="4" rx="1" fill={T.txt2} opacity=".4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   APP BAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function ZoomPill({ zoom, setZoom }) {
+  const opts = [
+    { z:'canvas', label:'拓扑' },
+    { z:'flow',   label:'流程' },
+    { z:'detail', label:'详情' },
+  ];
+  return (
+    <div style={{ display:'flex', background:T.surf, borderRadius:8, padding:2, gap:1 }}>
+      {opts.map(o => {
+        const active = zoom === o.z;
+        return (
+          <button key={o.z} onClick={() => setZoom(o.z)} style={{
+            padding:'4px 11px', borderRadius:6, border:'none',
+            background: active ? T.prim : 'transparent',
+            color: active ? T.onPrim : T.txt3,
+            fontSize:11, fontWeight: active ? 700 : 500,
+            cursor:'pointer', fontFamily:'inherit',
+            transition:'background 160ms, color 160ms',
+            letterSpacing: active ? .2 : 0,
+          }}>{o.label}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AppBar({ zoom, setZoom, canGoBack, onBack }) {
+  return (
+    <div style={{ height:52, background:T.bg3, display:'flex', alignItems:'center',
+      padding:'0 14px', gap:10, flexShrink:0, borderBottom:`1px solid ${T.line}` }}>
+      {canGoBack ? (
+        <button onClick={onBack} style={{
+          width:32, height:32, borderRadius:8, border:'none',
+          background:T.surf, color:T.txt2, cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:18, transition:'background 150ms', flexShrink:0,
+        }}>‹</button>
+      ) : (
+        <div style={{ width:32, height:32, borderRadius:8, background:T.surf,
+          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="3" width="6" height="4" rx="1.5" fill={T.prim} opacity=".9"/>
+            <rect x="9" y="3" width="6" height="4" rx="1.5" fill={T.prim} opacity=".5"/>
+            <rect x="1" y="9" width="6" height="4" rx="1.5" fill={T.prim} opacity=".5"/>
+            <rect x="9" y="9" width="6" height="4" rx="1.5" fill={T.prim} opacity=".3"/>
+          </svg>
+        </div>
+      )}
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:14, fontWeight:700, color:T.txt1, lineHeight:1.2 }}>RF 链路预算</div>
+        <div style={{ fontSize:10, color:T.txt3, lineHeight:1 }}>链路 1 · 2.4 GHz · 1 km</div>
+      </div>
+      <ZoomPill zoom={zoom} setZoom={setZoom} />
+      <button style={{ width:32, height:32, borderRadius:8, border:'none',
+        background:T.surf, color:T.txt2, cursor:'pointer',
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:19, flexShrink:0 }}>⊕</button>
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VIEW 1 · CANVAS (拓扑视图)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function PortPopup({ fromNode, visible, onClose, onConnect }) {
+  if (!visible) return null;
+  const targets = NODES.filter(n => n.id !== fromNode.id);
+  return (
+    <div onClick={onClose} style={{
+      position:'absolute', inset:0, zIndex:100, display:'flex',
+      alignItems:'center', justifyContent:'center',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:T.surf2, border:`1px solid ${T.surf3}`,
+        borderRadius:12, overflow:'hidden', width:200,
+        boxShadow:T.sh3, animation:'popIn 160ms ease',
+      }}>
+        <div style={{ padding:'10px 14px 8px', borderBottom:`1px solid ${T.line}` }}>
+          <div style={{ fontSize:10, fontWeight:800, color:T.txt3, textTransform:'uppercase', letterSpacing:.6 }}>连接到</div>
+          <div style={{ fontSize:12, fontWeight:600, color:KC[fromNode.kind].c, marginTop:2 }}>
+            {fromNode.icon} {fromNode.name}
+          </div>
+        </div>
+        {targets.slice(0,4).map(t => (
+          <button key={t.id} onClick={() => onConnect(t.id)} style={{
+            width:'100%', display:'flex', alignItems:'center', gap:8,
+            padding:'9px 14px', background:'none', border:'none',
+            borderBottom:`1px solid ${T.line2}`, cursor:'pointer',
+            transition:'background 120ms',
+          }} onMouseEnter={e => e.currentTarget.style.background=T.surf3}
+             onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+            <div style={{ width:6, height:6, borderRadius:'50%', background:KC[t.kind].c, flexShrink:0 }}/>
+            <span style={{ fontSize:12, color:T.txt2, flex:1, textAlign:'left' }}>{t.name}</span>
+            <span style={{ fontSize:10, fontFamily:'monospace', color:KC[t.kind].c }}>{t.out}</span>
+          </button>
+        ))}
+        <button style={{
+          width:'100%', padding:'9px 14px', background:'none', border:'none',
+          cursor:'pointer', fontSize:12, color:T.prim, textAlign:'left',
+        }}>＋ 新建节点</button>
+      </div>
+    </div>
+  );
+}
+
+function CanvasNodeChip({ node, pos, selected, onTap, onPortTap }) {
+  const kc  = KC[node.kind];
+  const [hov, setHov] = useState(false);
+  const [portHov, setPortHov] = useState(null);
+  const isActive = selected || hov;
+
+  return (
+    <div style={{ position:'absolute', left:pos.x, top:pos.y, width:NW, height:NH }}>
+      {/* Top port */}
+      <div onMouseEnter={() => setPortHov('in')} onMouseLeave={() => setPortHov(null)}
+        onClick={e => { e.stopPropagation(); onPortTap('in'); }}
+        style={{
+          position:'absolute', top:-6, left:'50%', transform:'translateX(-50%)',
+          width:12, height:12, borderRadius:'50%', zIndex:5, cursor:'pointer',
+          background: portHov==='in' ? kc.c : '#2A3A56',
+          border:`2px solid ${portHov==='in' ? kc.c : '#3A4E6A'}`,
+          boxShadow: portHov==='in' ? `0 0 10px ${kc.c}` : 'none',
+          transition:'all 150ms',
+        }} />
+
+      {/* Card */}
+      <div onClick={() => onTap(node.id)}
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{
+          width:'100%', height:'100%', borderRadius:10,
+          background: isActive ? `linear-gradient(135deg, ${kc.c}22, ${kc.c}0A)` : '#1C2A44',
+          border:`1.5px solid ${isActive ? kc.c : kc.c+'55'}`,
+          boxShadow: isActive
+            ? `0 0 0 2px ${kc.c}30, 0 4px 20px rgba(0,0,0,.6), 0 0 16px ${kc.c}22`
+            : '0 2px 10px rgba(0,0,0,.5)',
+          cursor:'pointer', userSelect:'none', overflow:'hidden',
+          display:'flex', flexDirection:'column', transition:'all 180ms',
+        }}>
+        {/* Top color bar */}
+        <div style={{ height:3, background:`linear-gradient(90deg, ${kc.c}, ${kc.c}66)`, flexShrink:0 }}/>
+        <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, padding:'0 10px' }}>
+          <div style={{ width:26, height:26, borderRadius:7, background:`${kc.c}25`,
+            border:`1px solid ${kc.c}40`,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:13, flexShrink:0, color:kc.c }}>{node.icon}</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:8, fontWeight:800, color:kc.c, textTransform:'uppercase',
+              letterSpacing:.6, lineHeight:1, marginBottom:2 }}>{node.kind}</div>
+            <div style={{ fontSize:11, fontWeight:600, color:'#C8DCF0', overflow:'hidden',
+              textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{node.name}</div>
+          </div>
+          <div style={{ textAlign:'right', flexShrink:0 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:kc.c,
+              fontFamily:"'SF Mono','Courier New',monospace", lineHeight:1,
+              textShadow:`0 0 12px ${kc.c}66` }}>{node.out}</div>
+            <div style={{ fontSize:8, color:'#4A6888', lineHeight:1.3 }}>{node.unit}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom port */}
+      <div onMouseEnter={() => setPortHov('out')} onMouseLeave={() => setPortHov(null)}
+        onClick={e => { e.stopPropagation(); onPortTap('out'); }}
+        style={{
+          position:'absolute', bottom:-6, left:'50%', transform:'translateX(-50%)',
+          width:12, height:12, borderRadius:'50%', zIndex:5, cursor:'pointer',
+          background: portHov==='out' ? kc.c : '#2A3A56',
+          border:`2px solid ${portHov==='out' ? kc.c : '#3A4E6A'}`,
+          boxShadow: portHov==='out' ? `0 0 10px ${kc.c}` : 'none',
+          transition:'all 150ms',
+        }} />
+    </div>
+  );
+}
+
+function CanvasView({ selectedId, onNodeTap }) {
+  const [popup, setPopup] = useState(null);
+  const GAP = 118;
+  const PAD_TOP = 20;
+  const canvasH = PAD_TOP + NODES.length * GAP + NH + 40;
+
+  const nodePos = NODES.map((_, i) => ({
+    x: (CW - NW) / 2,
+    y: PAD_TOP + i * GAP,
+  }));
+
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden',
+      position:'relative', background:'#080E1C' }}>
+
+      {/* Scrollable canvas */}
+      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden',
+        WebkitOverflowScrolling:'touch',
+        backgroundImage:'radial-gradient(circle, #1E2E48 1px, transparent 1px)',
+        backgroundSize:'22px 22px' }}>
+
+        <div style={{ position:'relative', width:CW, minHeight:canvasH, margin:'0 auto' }}>
+
+          {/* SVG edge layer */}
+          <svg style={{ position:'absolute', top:0, left:0, width:'100%', height:canvasH,
+            pointerEvents:'none', overflow:'visible' }}>
+            {NODES.slice(0,-1).map((n, i) => {
+              const p1x = nodePos[i].x + NW/2,   p1y = nodePos[i].y + NH + 6;
+              const p2x = nodePos[i+1].x + NW/2, p2y = nodePos[i+1].y - 6;
+              const mid = (p1y + p2y) / 2;
+              const col = KC[n.kind].c;
+              const next = NODES[i+1];
+              const isGain = next.delta?.startsWith('+');
+              const isLoss = next.delta?.startsWith('−');
+              const lblCol = isGain ? '#44D86A' : isLoss ? '#FF8060' : T.prim;
+              return (
+                <g key={n.id}>
+                  {/* Glow line */}
+                  <path d={`M${p1x},${p1y} C${p1x},${mid} ${p2x},${mid} ${p2x},${p2y}`}
+                    fill="none" stroke={col} strokeWidth="3" opacity=".12"/>
+                  {/* Main line */}
+                  <path d={`M${p1x},${p1y} C${p1x},${mid} ${p2x},${mid} ${p2x},${p2y}`}
+                    fill="none" stroke={col} strokeWidth="1.5" opacity=".6"
+                    strokeDasharray="4 3"/>
+                  {/* Arrow dot */}
+                  <circle cx={p2x} cy={p2y} r="3" fill={col} opacity=".8"/>
+                  {/* Delta label */}
+                  {next.delta && (
+                    <>
+                      <rect x={p1x-26} y={mid-10} width={52} height={20} rx={10}
+                        fill="#0E1828" stroke={lblCol} strokeWidth="1" opacity=".9"/>
+                      <text x={p1x} y={mid+5} textAnchor="middle"
+                        fontSize="9" fontWeight="800" fill={lblCol}
+                        fontFamily="'SF Mono','Courier New',monospace">{next.delta}</text>
+                    </>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Node chips */}
+          {NODES.map((n, i) => (
+            <CanvasNodeChip key={n.id}
+              node={n} pos={nodePos[i]}
+              selected={n.id === selectedId}
+              onTap={onNodeTap}
+              onPortTap={port => setPopup({ node:n, port })}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Tap-hint bar */}
+      <div style={{ flexShrink:0, padding:'8px 14px',
+        background:'rgba(8,14,28,.95)', borderTop:'1px solid #1A2A46',
+        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ width:6, height:6, borderRadius:'50%', background:T.prim,
+            animation:'pulse 2s ease infinite' }}/>
+          <span style={{ fontSize:10, color:T.txt3 }}>全局拓扑 · {NODES.length} 节点</span>
+        </div>
+        <span style={{ fontSize:10, color:T.txt4 }}>点击节点 → 流程视图</span>
+      </div>
+
+      {popup && (
+        <PortPopup
+          fromNode={popup.node}
+          visible={true}
+          onClose={() => setPopup(null)}
+          onConnect={targetId => { setPopup(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VIEW 2 · FLOW (流程视图)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function FlowConnector({ fromNode, toNode }) {
+  const kc  = KC[fromNode.kind];
+  const isGain = toNode.delta && toNode.delta.startsWith('+');
+  const isLoss = toNode.delta && toNode.delta.startsWith('−');
+  return (
+    <div style={{ display:'flex', alignItems:'center', padding:'0 16px', height:44,
+      gap:10, flexShrink:0 }}>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2, flexShrink:0 }}>
+        <div style={{ width:1.5, height:8, background:T.line }}/>
+        <div style={{ width:0, height:0, borderLeft:'4px solid transparent',
+          borderRight:'4px solid transparent', borderTop:`5px solid ${T.line}` }}/>
+      </div>
+      {/* Delta badge */}
+      {toNode.delta && (
+        <div style={{
+          padding:'3px 8px', borderRadius:6,
+          background: isGain ? 'rgba(68,216,106,.1)' : isLoss ? 'rgba(255,112,112,.1)' : T.surf,
+          border:`1px solid ${isGain ? '#44D86A44' : isLoss ? '#FF707044' : T.line}`,
+          fontSize:10, fontWeight:700, fontFamily:"'SF Mono','Courier New',monospace",
+          color: isGain ? T.ok : isLoss ? T.err : T.txt3,
+          letterSpacing:.3, whiteSpace:'nowrap',
+        }}>{toNode.delta}</div>
+      )}
+      <div style={{ flex:1, height:1, background:`${kc.c}18` }}/>
+      {/* Output power */}
+      <div style={{ fontSize:10, color:kc.c, fontFamily:"'SF Mono','Courier New',monospace",
+        fontWeight:700, whiteSpace:'nowrap' }}>{fromNode.out}</div>
+    </div>
+  );
+}
+
+function FlowCard({ node, selected, onTap }) {
+  const kc  = KC[node.kind];
+  const [hov, setHov] = useState(false);
+  return (
+    <div onClick={() => onTap(node.id)}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        margin:'0 12px', borderRadius:12,
+        background: selected ? kc.t : T.surf,
+        border:`1.5px solid ${selected ? kc.c : hov ? kc.c+'44' : T.line}`,
+        boxShadow: selected ? `0 0 0 2px ${kc.c}20, ${T.sh2}` : hov ? T.sh1 : 'none',
+        cursor:'pointer', transition:'all 150ms', overflow:'hidden', flexShrink:0,
+      }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px' }}>
+        {/* Left accent */}
+        <div style={{ width:3, height:36, borderRadius:2,
+          background:`linear-gradient(180deg, ${kc.c}, ${kc.c}44)`, flexShrink:0 }}/>
+        {/* Icon */}
+        <div style={{ width:32, height:32, borderRadius:8, background:`${kc.c}18`,
+          display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>
+          {node.icon}
+        </div>
+        {/* Text */}
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+            <span style={{ fontSize:8, fontWeight:800, color:kc.c, textTransform:'uppercase',
+              letterSpacing:.6, padding:'1px 5px', borderRadius:4,
+              background:`${kc.c}18`, border:`1px solid ${kc.c}28` }}>{node.kind}</span>
+          </div>
+          <div style={{ fontSize:13, fontWeight:600, color:T.txt1,
+            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{node.name}</div>
+        </div>
+        {/* Value */}
+        <div style={{ textAlign:'right', flexShrink:0 }}>
+          <div style={{ fontSize:16, fontWeight:800, color:kc.c,
+            fontFamily:"'SF Mono','Courier New',monospace", letterSpacing:-.5 }}>{node.out}</div>
+          <div style={{ fontSize:9, color:T.txt4, lineHeight:1.2 }}>{node.unit}</div>
+        </div>
+        {/* Chevron */}
+        <div style={{ color:T.txt4, fontSize:14, flexShrink:0 }}>›</div>
+      </div>
+    </div>
+  );
+}
+
+function FlowView({ selectedId, onCardTap }) {
+  return (
+    <div style={{ flex:1, overflowY:'auto', background:T.bg,
+      WebkitOverflowScrolling:'touch', paddingBottom:12 }}>
+      {/* Summary strip */}
+      <div style={{ margin:'12px 12px 4px', padding:'10px 14px', borderRadius:10,
+        background:T.surf2, border:`1px solid ${T.line}`,
+        display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ fontSize:11, color:T.txt3 }}>
+          <span style={{ color:T.txt2, fontWeight:600 }}>链路分析</span> · 8 个模块
+        </div>
+        <div style={{ display:'flex', gap:12 }}>
+          {[{l:'EIRP', v:'+57.0', u:'dBm'}, {l:'余量', v:'+49.5', u:'dB'}].map(x => (
+            <div key={x.l} style={{ textAlign:'right' }}>
+              <div style={{ fontSize:12, fontWeight:800, color:T.prim,
+                fontFamily:"'SF Mono','Courier New',monospace" }}>{x.v}<span style={{fontSize:9, color:T.txt4, marginLeft:2}}>{x.u}</span></div>
+              <div style={{ fontSize:9, color:T.txt4 }}>{x.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Cards + connectors */}
+      {NODES.map((node, i) => (
+        <React.Fragment key={node.id}>
+          {i > 0 && (
+            <FlowConnector fromNode={NODES[i-1]} toNode={node} />
+          )}
+          <FlowCard node={node} selected={node.id === selectedId} onTap={onCardTap} />
+        </React.Fragment>
+      ))}
+
+      {/* Bottom summary */}
+      <div style={{ margin:'12px 12px 0', padding:'10px 14px', borderRadius:10,
+        background:'rgba(68,216,106,.06)', border:'1px solid rgba(68,216,106,.2)',
+        display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ width:8, height:8, borderRadius:'50%', background:T.ok, flexShrink:0 }}/>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:T.ok }}>链路预算通过</div>
+          <div style={{ fontSize:10, color:T.txt3 }}>余量 +49.5 dB · 满足最小 SNR 要求</div>
+        </div>
+        <div style={{ fontSize:18, color:T.ok }}>✓</div>
+      </div>
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VIEW 3 · DETAIL (详情视图)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function MiniNodeCard({ node, dim, onClick }) {
+  const kc = KC[node.kind];
+  return (
+    <div onClick={onClick} style={{
+      padding:'8px 12px', borderRadius:8, background:T.surf2,
+      border:`1px solid ${kc.c}33`, cursor:'pointer',
+      display:'flex', alignItems:'center', gap:8,
+      opacity: dim ? .5 : 1, transition:'all 150ms',
+    }}
+      onMouseEnter={e => { if (!dim) e.currentTarget.style.borderColor = kc.c }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = `${kc.c}33` }}>
+      <div style={{ width:24, height:24, borderRadius:6, background:`${kc.c}18`,
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, flexShrink:0 }}>
+        {node.icon}
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:8, fontWeight:700, color:kc.c, textTransform:'uppercase' }}>{node.kind}</div>
+        <div style={{ fontSize:11, fontWeight:600, color:T.txt1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{node.name}</div>
+      </div>
+      <div style={{ fontSize:11, fontWeight:700, color:kc.c,
+        fontFamily:"'SF Mono','Courier New',monospace" }}>{node.out}</div>
+      <div style={{ fontSize:13, color:T.txt4 }}>›</div>
+    </div>
+  );
+}
+
+function DetailView({ nodeId, onNavigate }) {
+  const node = byId(nodeId);
+  const idx  = idxOf(nodeId);
+  const prev = idx > 0 ? NODES[idx - 1] : null;
+  const next = idx < NODES.length - 1 ? NODES[idx + 1] : null;
+  const kc   = KC[node.kind];
+  const [treeOpen, setTreeOpen] = useState(true);
+
+  return (
+    <div style={{ flex:1, overflowY:'auto', background:T.bg,
+      WebkitOverflowScrolling:'touch', animation:'fadeUp 200ms ease' }}>
+
+      {/* Hero header */}
+      <div style={{
+        margin:'12px 12px 0', borderRadius:14, overflow:'hidden',
+        background:`linear-gradient(135deg, ${kc.c}18, ${kc.c}06)`,
+        border:`1.5px solid ${kc.c}44`, padding:'18px 18px 14px',
+      }}>
+        <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+          <div style={{ width:48, height:48, borderRadius:13, background:`${kc.c}22`,
+            border:`1.5px solid ${kc.c}44`, display:'flex', alignItems:'center',
+            justifyContent:'center', fontSize:24, flexShrink:0 }}>
+            {node.icon}
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4 }}>
+              <span style={{ fontSize:9, fontWeight:800, color:kc.c,
+                textTransform:'uppercase', letterSpacing:.7,
+                padding:'2px 6px', borderRadius:5,
+                background:`${kc.c}1A`, border:`1px solid ${kc.c}33` }}>{node.kind}</span>
+              <span style={{ fontSize:9, color:T.txt4 }}>节点 {idx + 1} / {NODES.length}</span>
+            </div>
+            <div style={{ fontSize:18, fontWeight:700, color:T.txt1, lineHeight:1.2 }}>{node.name}</div>
+          </div>
+        </div>
+        {/* Output value display */}
+        <div style={{ marginTop:14, padding:'10px 14px', borderRadius:10,
+          background:`${T.bg3}CC`, border:`1px solid ${T.line}`,
+          display:'flex', alignItems:'baseline', gap:8 }}>
+          <span style={{ fontSize:11, color:T.txt3, flex:1 }}>输出信号</span>
+          <span style={{ fontSize:26, fontWeight:800, color:kc.c, letterSpacing:-1,
+            fontFamily:"'SF Mono','Courier New',monospace" }}>{node.out}</span>
+          <span style={{ fontSize:12, color:T.txt4 }}>{node.unit}</span>
+        </div>
+        {node.delta && (
+          <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ width:4, height:4, borderRadius:'50%', background:kc.c, opacity:.6 }}/>
+            <span style={{ fontSize:11, color:kc.c, fontFamily:"'SF Mono','Courier New',monospace",
+              fontWeight:700, opacity:.85 }}>{node.delta}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Parameters */}
+      <div style={{ margin:'14px 12px 0' }}>
+        <div style={{ fontSize:10, fontWeight:800, color:T.txt3, textTransform:'uppercase',
+          letterSpacing:.7, marginBottom:8 }}>参数</div>
+        <div style={{ borderRadius:10, overflow:'hidden', border:`1px solid ${T.line}` }}>
+          {node.params.map((p, i) => (
+            <div key={p.l} style={{
+              display:'flex', alignItems:'center', padding:'10px 14px',
+              background: i % 2 === 0 ? T.surf : T.surf2,
+              borderBottom: i < node.params.length - 1 ? `1px solid ${T.line2}` : 'none',
+            }}>
+              <span style={{ flex:1, fontSize:12, color:T.txt3 }}>{p.l}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:T.txt1,
+                fontFamily:"'SF Mono','Courier New',monospace" }}>{p.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Signal path tree */}
+      <div style={{ margin:'14px 12px 0' }}>
+        <button onClick={() => setTreeOpen(o => !o)} style={{
+          width:'100%', display:'flex', alignItems:'center', gap:8, background:'none',
+          border:'none', cursor:'pointer', padding:0, marginBottom:8, textAlign:'left',
+        }}>
+          <span style={{ fontSize:10, fontWeight:800, color:T.txt3, textTransform:'uppercase',
+            letterSpacing:.7, flex:1 }}>信号路径</span>
+          <span style={{ fontSize:12, color:T.txt3, transition:'transform 200ms',
+            display:'inline-block', transform: treeOpen ? 'rotate(90deg)' : '' }}>›</span>
+        </button>
+
+        {treeOpen && (
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {/* Prev node */}
+            {prev ? (
+              <div>
+                <MiniNodeCard node={prev} onClick={() => onNavigate(prev.id)} />
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'4px 14px' }}>
+                  <div style={{ width:1.5, height:16, background:T.line, marginLeft:11 }}/>
+                  <span style={{ fontSize:10, color:T.txt4, fontFamily:'monospace' }}>
+                    → {node.delta || '→'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding:'8px 12px', borderRadius:8, border:`1px dashed ${T.line}`,
+                fontSize:11, color:T.txt4, textAlign:'center' }}>信号源起点</div>
+            )}
+
+            {/* Current node highlight */}
+            <div style={{ padding:'10px 14px', borderRadius:10,
+              background:`${kc.c}14`, border:`2px solid ${kc.c}`,
+              display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:kc.c,
+                animation:'pulse 1.8s ease infinite', flexShrink:0 }}/>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:9, color:kc.c, fontWeight:800, textTransform:'uppercase', letterSpacing:.5 }}>当前节点</div>
+                <div style={{ fontSize:13, fontWeight:700, color:T.txt1 }}>{node.name}</div>
+              </div>
+              <div style={{ fontSize:14, fontWeight:800, color:kc.c,
+                fontFamily:"'SF Mono','Courier New',monospace" }}>{node.out}</div>
+            </div>
+
+            {/* Next node */}
+            {next ? (
+              <div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'4px 14px' }}>
+                  <div style={{ width:1.5, height:16, background:T.line, marginLeft:11 }}/>
+                  <span style={{ fontSize:10, color:T.txt4, fontFamily:'monospace' }}>
+                    → {next.delta || '→'}
+                  </span>
+                </div>
+                <MiniNodeCard node={next} onClick={() => onNavigate(next.id)} />
+              </div>
+            ) : (
+              <div>
+                <div style={{ width:1.5, height:12, background:T.line, margin:'4px 0 0 23px' }}/>
+                <div style={{ padding:'8px 12px', borderRadius:8, border:`1px dashed ${T.line}`,
+                  fontSize:11, color:T.txt4, textAlign:'center' }}>信号链路末端</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div style={{ margin:'16px 12px 20px', display:'flex', gap:8 }}>
+        {[{l:'编辑参数', c:T.prim}, {l:'添加节点', c:T.sec}].map(a => (
+          <button key={a.l} style={{
+            flex:1, padding:'10px 0', borderRadius:9, border:'none',
+            background:`${a.c}1A`, color:a.c, fontSize:12, fontWeight:700,
+            cursor:'pointer', fontFamily:'inherit', transition:'background 150ms',
+          }}
+            onMouseEnter={e => e.currentTarget.style.background=`${a.c}28`}
+            onMouseLeave={e => e.currentTarget.style.background=`${a.c}1A`}>{a.l}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BOTTOM NAV
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function BottomNav({ active, onNav }) {
+  const items = [
+    { id:'home',    icon:'⌂', label:'首页' },
+    { id:'editor',  icon:'⊞', label:'编辑' },
+    { id:'results', icon:'◉', label:'结果' },
+    { id:'market',  icon:'◈', label:'市场' },
+  ];
+  return (
+    <div style={{ height:52, background:T.bg3, display:'flex', alignItems:'center',
+      flexShrink:0, borderTop:`1px solid ${T.line}` }}>
+      {items.map(item => {
+        const act = active === item.id;
+        return (
+          <button key={item.id} onClick={() => onNav(item.id)} style={{
+            flex:1, height:'100%', display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center', gap:3,
+            border:'none', background:'none', cursor:'pointer', fontFamily:'inherit',
+          }}>
+            <span style={{ fontSize:18, lineHeight:1, color: act ? T.prim : T.txt4,
+              transition:'color 150ms' }}>{item.icon}</span>
+            <span style={{ fontSize:9, fontWeight: act ? 700 : 500,
+              color: act ? T.prim : T.txt4, letterSpacing:.2,
+              transition:'color 150ms' }}>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   APP (phone contents)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function ProRFApp() {
+  const [zoom,     setZoom]     = useState('canvas');   // canvas | flow | detail
+  const [selId,    setSelId]    = useState(NODES[0].id);
+  const [animKey,  setAnimKey]  = useState(0);
+  const [nav,      setNav]      = useState('editor');
+
+  const navigate = useCallback((newZoom, nodeId) => {
+    if (nodeId) setSelId(nodeId);
+    setZoom(newZoom);
+    setAnimKey(k => k + 1);
+  }, []);
+
+  const handleCanvasNodeTap = useCallback(id => {
+    navigate('flow', id);
+  }, [navigate]);
+
+  const handleFlowCardTap = useCallback(id => {
+    navigate('detail', id);
+  }, [navigate]);
+
+  const handleDetailNavigate = useCallback(id => {
+    navigate('detail', id);
+  }, [navigate]);
+
+  const handleBack = useCallback(() => {
+    if (zoom === 'detail') navigate('flow');
+    else if (zoom === 'flow') navigate('canvas');
+  }, [zoom, navigate]);
+
+  const handleZoomChange = useCallback(z => {
+    navigate(z);
+  }, [navigate]);
+
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column',
+      background:T.bg, overflow:'hidden' }}>
+      <StatusBar />
+      <AppBar
+        zoom={zoom} setZoom={handleZoomChange}
+        canGoBack={zoom !== 'canvas'}
+        onBack={handleBack}
+      />
+
+      {/* View container */}
+      <div key={animKey} style={{ flex:1, display:'flex', flexDirection:'column',
+        overflow:'hidden', animation:'fadeUp 200ms ease' }}>
+        {zoom === 'canvas' && (
+          <CanvasView selectedId={selId} onNodeTap={handleCanvasNodeTap} />
+        )}
+        {zoom === 'flow' && (
+          <FlowView selectedId={selId} onCardTap={handleFlowCardTap} />
+        )}
+        {zoom === 'detail' && (
+          <DetailView nodeId={selId} onNavigate={handleDetailNavigate} />
+        )}
+      </div>
+
+      <BottomNav active={nav} onNav={setNav} />
+      {/* Home indicator */}
+      <div style={{ height:20, background:T.bg, display:'flex', alignItems:'center',
+        justifyContent:'center', flexShrink:0 }}>
+        <div style={{ width:108, height:4, borderRadius:2,
+          background:T.txt2, opacity:.2 }}/>
+      </div>
+    </div>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ROOT — phone bezel + stage
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const PHONE_W = 390, PHONE_H = 762, LABEL_H = 40;
+
+function Root() {
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    function recalc() {
+      const availW = window.innerWidth  - 32;
+      const availH = window.innerHeight - 16;
+      const s = Math.min(1, availW / PHONE_W, availH / (PHONE_H + LABEL_H));
+      setScale(parseFloat(s.toFixed(4)));
+    }
+    recalc();
+    window.addEventListener('resize', recalc);
+    return () => window.removeEventListener('resize', recalc);
+  }, []);
+
+  return (
+    <div style={{
+      width: PHONE_W * scale,
+      height: (PHONE_H + LABEL_H) * scale,
+      display:'flex', flexDirection:'column', alignItems:'center',
+      transformOrigin:'top center',
+    }}>
+      <div style={{
+        transform: `scale(${scale})`,
+        transformOrigin: 'top center',
+        width: PHONE_W,
+        display:'flex', flexDirection:'column', alignItems:'center', gap:10,
+      }}>
+        {/* Stage label */}
+        <div style={{ display:'flex', alignItems:'center', gap:14, height:LABEL_H }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,.28)',
+            textTransform:'uppercase', letterSpacing:1.2 }}>ProRF · 语义缩放编辑器</div>
+          <div style={{ height:1, width:40, background:'rgba(255,255,255,.1)' }}/>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,.2)', letterSpacing:.3 }}>
+            点击节点 · 层层深入
+          </div>
+        </div>
+
+        {/* Phone bezel */}
+        <div style={{
+          width:PHONE_W, height:PHONE_H,
+          borderRadius:50,
+          background:'#0C1020',
+          border:'10px solid #181E2E',
+          boxShadow:`
+            0 50px 120px rgba(0,0,0,.9),
+            0 0 0 1px rgba(255,255,255,.05),
+            inset 0 1px 0 rgba(255,255,255,.08),
+            inset 0 -1px 0 rgba(0,0,0,.5)
+          `,
+          overflow:'hidden',
+          position:'relative',
+          flexShrink:0,
+        }}>
+          {/* Camera notch */}
+          <div style={{
+            position:'absolute', top:0, left:'50%', transform:'translateX(-50%)',
+            width:120, height:28, background:'#0C1020', borderRadius:'0 0 20px 20px',
+            zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+          }}>
+            <div style={{ width:10, height:10, borderRadius:'50%', background:'#1A2038',
+              border:'1px solid #252840', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ width:4, height:4, borderRadius:'50%', background:'#0A1020' }}/>
+            </div>
+            <div style={{ width:34, height:8, borderRadius:4, background:'#1A2038', border:'1px solid #252840' }}/>
+          </div>
+          <ProRFApp />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+</script>
+</body>
+</html>

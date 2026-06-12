@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProRF — 射频链路预算</title>
+<link rel="stylesheet" href="prf-theme.css">
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; background:#141418; overflow:hidden; }
+  body { display:flex; align-items:center; justify-content:center; }
+  .stage {
+    display:flex; align-items:flex-start; justify-content:center;
+    gap:32px; padding:20px;
+    width:100%; height:100%; overflow-x:auto; overflow-y:hidden;
+  }
+  .frame-col { display:flex; flex-direction:column; align-items:center; gap:10; }
+  .frame-label {
+    color:rgba(255,255,255,.55); font-size:12px; font-weight:700; letter-spacing:.8px;
+    text-transform:uppercase; font-family:system-ui,sans-serif; padding:4px 0;
+  }
+  /* override android frame border for darker bg */
+  .prf-single { width:390px; height:844px; border-radius:44px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.7), 0 0 0 1.5px rgba(255,255,255,.08); flex-shrink:0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="prf-data.jsx"></script>
+<script type="text/babel" src="prf-ui.jsx"></script>
+<script type="text/babel" src="prf-canvas.jsx"></script>
+<script type="text/babel" src="prf-screens.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useCallback, useRef, useEffect } = React;
+
+/* ── Deep clone util ─────────────────────────────────────────── */
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ── App Shell ───────────────────────────────────────────────── */
+function ProRFApp() {
+  /* Tweaks */
+  const DEFAULTS = { theme:'light', lang:'zh' };
+  const [t, setTweak] = useTweaks(DEFAULTS);
+
+  /* Navigation state */
+  const [nav, setNav]       = useState('home');   // home | editor | results | market | profile
+  useEffect(() => { document.title = nav === 'editor' ? `ProRF · ${activeWf?.name||''}` : 'ProRF'; }, [nav, activeWf]);
+  const [activeWf, setActiveWf] = useState(null); // current workflow object
+  const [workflows, setWorkflows] = useState(() => clone(WORKFLOWS));
+
+  const openWorkflow = useCallback((wf) => {
+    setActiveWf(clone(wf));
+    setNav('editor');
+  }, []);
+
+  const createWorkflow = useCallback(() => {
+    const tpl = clone(WORKFLOWS[0]);
+    tpl.id    = 'wf-' + Date.now();
+    tpl.name  = '新建链路 ' + new Date().toLocaleDateString('zh');
+    tpl.updatedAt = new Date().toLocaleString('zh');
+    setWorkflows(ws => [tpl, ...ws]);
+    setActiveWf(tpl);
+    setNav('editor');
+  }, []);
+
+  const saveWorkflow = useCallback(() => {
+    if (!activeWf) return;
+    setWorkflows(ws => ws.map(w => w.id === activeWf.id ? { ...activeWf, updatedAt: new Date().toLocaleString('zh') } : w));
+  }, [activeWf]);
+
+  const navTo = useCallback((screen) => {
+    if (screen === 'editor' && !activeWf) {
+      openWorkflow(WORKFLOWS[0]);
+    } else {
+      setNav(screen);
+    }
+  }, [activeWf, openWorkflow]);
+
+  /* Theme → data-theme attribute on .prf-app */
+  const theme = t.theme || 'light';
+
+  return (
+    <>
+      <div className="stage">
+        {/* Single interactive phone */}
+        <div className="frame-col">
+          <div className="frame-label">ProRF 交互原型</div>
+          <div className="prf-single">
+            <AppFrame
+              theme={theme} nav={nav} setNav={navTo}
+              workflows={workflows}
+              activeWf={activeWf} setActiveWf={setActiveWf}
+              onOpenWorkflow={openWorkflow}
+              onCreateWorkflow={createWorkflow}
+              onSaveWorkflow={saveWorkflow}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Tweaks Panel */}
+      <TweaksPanel>
+        <TweakSection label="主题" />
+        <TweakRadio label="视觉风格" value={theme}
+          options={['light','dark','carbon']}
+          onChange={v => setTweak('theme', v)} />
+        <TweakSection label="语言" />
+        <TweakRadio label="界面语言" value={t.lang}
+          options={['zh','en']}
+          onChange={v => setTweak('lang', v)} />
+      </TweaksPanel>
+    </>
+  );
+}
+
+/* ── App Frame (renders inside the phone chrome) ─────────────── */
+function AppFrame({ theme, nav, setNav, workflows, activeWf, setActiveWf, onOpenWorkflow, onCreateWorkflow, onSaveWorkflow }) {
+  return (
+    <div data-theme={theme} style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'var(--c-bg)', overflow:'hidden', position:'relative' }}>
+      {/* Status bar */}
+      <div style={{ height:28, background:'var(--c-bg)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', flexShrink:0 }}>
+        <span style={{ fontSize:12, fontWeight:700, color:'var(--c-txt2)' }}>9:41</span>
+        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+          {/* Signal bars */}
+          <svg width="18" height="12" viewBox="0 0 18 12">
+            {[0,1,2,3].map(i => <rect key={i} x={i*4.5} y={12-(i+1)*3} width="3.5" height={(i+1)*3} rx="1" fill={i<3?'var(--c-txt1)':'var(--c-txt4)'}/>)}
+          </svg>
+          <svg width="15" height="12" viewBox="0 0 15 12" fill="var(--c-txt1)"><path d="M7.5 3C4.47 3 1.74 4.26 0 6.25l1.5 1.5C2.87 6.15 5.07 5 7.5 5s4.63 1.15 6 2.75l1.5-1.5C13.26 4.26 10.53 3 7.5 3zm0 4c-1.82 0-3.46.73-4.65 1.9L4.35 10.4C5.18 9.54 6.28 9 7.5 9s2.32.54 3.15 1.4l1.5-1.5C11 7.73 9.32 7 7.5 7zm0 4c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5S8.33 11 7.5 11z"/></svg>
+          <span style={{ fontSize:11, fontWeight:700, color:'var(--c-txt1)' }}>100%</span>
+          <svg width="22" height="11" viewBox="0 0 22 11"><rect x="0" y="1" width="18" height="9" rx="2" fill="none" stroke="var(--c-txt1)" strokeWidth="1.2"/><rect x="1.5" y="2.5" width="14" height="6" rx="1" fill="var(--c-ok)"/><rect x="19" y="3.5" width="2" height="4" rx="1" fill="var(--c-txt1)" opacity=".5"/></svg>
+        </div>
+      </div>
+
+      {/* Screen content */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
+        {nav === 'home' && (
+          <HomeScreen workflows={workflows} onOpen={onOpenWorkflow} onCreate={onCreateWorkflow} />
+        )}
+        {nav === 'editor' && activeWf && (
+          <WorkflowEditorScreen
+            wf={activeWf}
+            onBack={() => setNav('home')}
+            onViewResults={() => setNav('results')}
+            onSave={onSaveWorkflow}
+          />
+        )}
+        {nav === 'results' && activeWf && (
+          <ResultsScreen wf={activeWf} onBack={() => setNav('editor')} />
+        )}
+        {nav === 'market' && <MarketScreen />}
+        {nav === 'profile' && (
+          <ProfileScreen
+            theme={theme}
+            setTheme={v => {}}
+          />
+        )}
+      </div>
+
+      {/* Bottom Nav */}
+      <BottomNav active={nav} onNav={setNav} />
+
+      {/* Bottom safe area */}
+      <div style={{ height:8, background:'var(--c-bg)', flexShrink:0 }} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<ProRFApp />);
+</script>
+</body>
+</html>

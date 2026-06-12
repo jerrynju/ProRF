@@ -1,0 +1,262 @@
+<resources>
+    <string name="app_name">ProRF</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_templates">Templates</string>
+    <string name="tab_profile">Me</string>
+
+    <!-- Home -->
+    <string name="home_subtitle">RF Link Budget Platform</string>
+    <string name="search_hint">Search links, tags…</string>
+    <string name="my_links">My Links</string>
+    <string name="action_new">+ New</string>
+    <string name="recommended_templates">Quick Templates</string>
+    <string name="status_ok">OK</string>
+    <string name="status_warn">Alert</string>
+    <string name="metric_margin">Link Margin</string>
+    <string name="metric_rx_power">RX Power</string>
+    <string name="metric_eirp">EIRP</string>
+    <string name="metric_nodes">Nodes</string>
+    <string name="metric_snr">SNR</string>
+    <string name="unit_count">nodes</string>
+    <string name="last_modified">Modified · %1$s</string>
+    <string name="delete_link_title">Delete Link</string>
+    <string name="delete_link_message">Delete “%1$s”? This cannot be undone.</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="back">Back</string>
+
+    <!-- Templates -->
+    <string name="templates_title">Template Library</string>
+    <string name="templates_subtitle">Start from a typical RF link scenario</string>
+    <string name="use_template">Use Template</string>
+    <string name="template_modules">%1$d modules</string>
+    <string name="tpl_sat">Satellite Comm</string>
+    <string name="tpl_sat_desc">Ku-band satellite downlink with TX/RX antennas and free-space loss</string>
+    <string name="tpl_5g">5G NR</string>
+    <string name="tpl_5g_desc">5G macro site to handset link at 3.5 GHz with LNA chain</string>
+    <string name="tpl_mw">Microwave</string>
+    <string name="tpl_mw_desc">18 GHz point-to-point backhaul with parabolic antennas</string>
+    <string name="tpl_radar_name">Radar System</string>
+    <string name="tpl_radar_desc">Complete radar link budget: transmitter, propagation path, and receiver chain</string>
+    <string name="tpl_blank">Blank Link</string>
+    <string name="tpl_blank_desc">Minimal TX → free space → RX chain to build on</string>
+
+    <!-- Editor -->
+    <string name="action_save">Save</string>
+    <string name="saved">Saved</string>
+    <string name="g_freq">Freq</string>
+    <string name="g_bw">BW</string>
+    <string name="g_dist">Dist</string>
+    <string name="g_temp">Temp</string>
+    <string name="global_params">Global Parameters</string>
+    <string name="g_freq_full">Frequency</string>
+    <string name="g_bw_full">Bandwidth</string>
+    <string name="g_dist_full">Distance</string>
+    <string name="g_temp_full">System Temperature</string>
+    <string name="apply_params">Apply</string>
+    <string name="results_bar_title">Link Budget Result</string>
+    <string name="view_details">Details →</string>
+    <string name="module_of_kind">%1$s Module</string>
+    <string name="params_section">Parameters</string>
+    <string name="params_reference">Reference (not used in calculation)</string>
+    <string name="params_by_global">Parameters of this module are derived from global settings</string>
+    <string name="move_up">↑ Up</string>
+    <string name="move_down">↓ Down</string>
+    <string name="pick_module">Add Module</string>
+    <string name="cat_all">All</string>
+    <string name="cat_tx">TX</string>
+    <string name="cat_loss">Loss</string>
+    <string name="cat_prop">Propagation</string>
+    <string name="cat_rx">RX</string>
+
+    <!-- Results -->
+    <string name="link_analysis">Link Analysis</string>
+    <string name="tab_summary">Summary</string>
+    <string name="tab_table">Table</string>
+    <string name="tab_chart">Chart</string>
+    <string name="tab_sankey">Sankey</string>
+    <string name="metric_noise_floor">Noise Floor</string>
+    <string name="metric_sensitivity">Sensitivity</string>
+    <string name="link_status">Link Status</string>
+    <string name="link_ok">Link OK ✓</string>
+    <string name="link_warn">Link Alert !</string>
+    <string name="margin_ok">Sufficient margin %1$s dB</string>
+    <string name="margin_low">Insufficient margin %1$s dB</string>
+    <string name="link_advice">Consider increasing TX power, antenna gain, or reducing distance.</string>
+    <string name="col_module">Module</string>
+    <string name="col_gain">Gain</string>
+    <string name="col_loss">Loss</string>
+    <string name="col_power">Out Power</string>
+    <string name="chart_title">SNR / Margin vs Distance</string>
+    <string name="legend_snr">SNR (dB)</string>
+    <string name="legend_margin">Margin (dB)</string>
+    <string name="legend_distance">Current distance</string>
+    <string name="chart_x_label">Distance (km, log)</string>
+    <string name="sankey_title">Power Flow (Sankey)</string>
+    <string name="legend_gain">Gain</string>
+    <string name="legend_loss">Loss</string>
+    <string name="legend_power">Output power</string>
+    <string name="no_data">No data</string>
+    <string name="no_chart_data">No chart data</string>
+
+    <!-- Profile -->
+    <string name="profile_name">RF Engineer</string>
+    <string name="profile_caption">ProRF · Free &amp; offline</string>
+    <string name="theme_style">Theme</string>
+    <string name="theme_light">☀️ Light</string>
+    <string name="theme_dark">🌙 Dark</string>
+    <string name="theme_carbon">⚡ Carbon</string>
+    <string name="other_settings">Settings</string>
+    <string name="setting_language">Language</string>
+    <string name="setting_language_value">Follows system</string>
+    <string name="setting_units">Units</string>
+    <string name="setting_units_value">SI</string>
+    <string name="setting_autosave">Auto save</string>
+    <string name="setting_save_mode">Save mode</string>
+    <string name="setting_on">On</string>
+    <string name="setting_manual">Manual</string>
+    <string name="setting_about">About ProRF</string>
+
+    <!-- UI/UX Enhancement strings -->
+    <string name="empty_links_title">No Links Yet</string>
+    <string name="empty_links_subtitle">Create your first RF link budget to get started</string>
+    <string name="empty_search">No results found</string>
+    <string name="action_new_link">New Link</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_duplicate">Duplicate</string>
+    <string name="action_copy_node">Copy</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_redo">Redo</string>
+    <string name="action_export">Export</string>
+    <string name="action_export_json">Export JSON</string>
+    <string name="action_share">Share</string>
+    <string name="export_json_filename">link_%1$s.json</string>
+    <string name="export_success">Exported successfully</string>
+    <string name="action_reset_params">Reset to Default</string>
+    <string name="delete_node_title">Delete Node</string>
+    <string name="delete_node_message">Delete "%1$s"? This cannot be undone.</string>
+    <string name="rename_link_title">Rename Link</string>
+    <string name="rename_link_hint">Enter new name</string>
+    <string name="rename_node_title">Rename Node</string>
+    <string name="sort_recent">Recent</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_margin">Margin</string>
+    <string name="filter_all_tags">All</string>
+    <string name="preset_5g">5G 3.5GHz</string>
+    <string name="preset_satellite">Satellite Ku</string>
+    <string name="preset_microwave">Microwave 18G</string>
+    <string name="preset_radar">Radar X-band</string>
+    <string name="about_title">About ProRF</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">Professional RF link budget calculator.\nOffline · Free · No ads · Zero permissions.</string>
+    <string name="export_summary_title">%1$s — Link Budget Summary</string>
+    <string name="export_margin">Link Margin: %1$s dB</string>
+    <string name="export_rx_power">Rx Power: %1$s dBm</string>
+    <string name="export_eirp">EIRP: %1$s dBm</string>
+    <string name="export_snr">SNR: %1$s dB</string>
+    <string name="export_nodes">Nodes: %1$d</string>
+    <string name="export_freq">Frequency: %1$s</string>
+    <string name="export_footer">Generated by ProRF</string>
+    <string name="action_confirm">OK</string>
+    <string name="module_unknown">Unknown Module</string>
+    <string name="link_duplicated">Link duplicated</string>
+    <string name="filter_fav">Show favorites only</string>
+    <string name="action_toggle_fav">Toggle favorite</string>
+    <string name="action_import">Import</string>
+    <string name="sort_label">Sort by</string>
+    <string name="editor_empty_hint">Tap + above to add your first module</string>
+
+    <!-- Settings dialog strings -->
+    <string name="language_dialog_title">Language</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">中文</string>
+    <string name="units_dialog_title">Units</string>
+    <string name="units_si">Metric (SI)</string>
+    <string name="units_imperial">Imperial</string>
+
+    <!-- Batch operations -->
+    <string name="action_select">Select</string>
+    <string name="action_select_all">Select All</string>
+    <string name="action_deselect_all">Deselect All</string>
+    <string name="action_delete_selected">Delete Selected</string>
+    <string name="action_export_selected">Export Selected</string>
+    <string name="selected_count">%1$d selected</string>
+    <string name="batch_delete_title">Delete Selected</string>
+    <string name="batch_delete_message">Delete %1$d links? This cannot be undone.</string>
+    <string name="batch_export_title">Export Links</string>
+
+    <!-- CX15: Unsaved changes -->
+    <string name="unsaved_changes_title">Unsaved Changes</string>
+    <string name="unsaved_changes_message">You have unsaved changes. Save before leaving?</string>
+    <string name="action_save_and_exit">Save &amp; Exit</string>
+    <string name="action_discard">Discard</string>
+
+    <!-- CX17: Import feedback -->
+    <string name="import_success">Imported %1$d link(s)</string>
+    <string name="import_failed">Import failed</string>
+
+    <!-- CX19: See all -->
+    <string name="see_all">See All →</string>
+
+    <!-- CX20: Onboarding -->
+    <string name="onboarding_title">Welcome to ProRF</string>
+    <string name="onboarding_desc">Professional RF link budget calculator. Create links from templates or start from scratch, edit node parameters, and analyze results in real time.</string>
+    <string name="onboarding_action">Get Started</string>
+
+    <!-- Onboarding features -->
+    <string name="onboarding_offline">Offline – no internet required</string>
+    <string name="onboarding_free">Free – no ads</string>
+    <string name="onboarding_private">Private – your data never leaves device</string>
+    <string name="onboarding_noperms">Zero permissions</string>
+
+    <!-- CX19: Clear data -->
+    <string name="clear_data_title">Clear All Data</string>
+    <string name="clear_data_message">This will delete all workflows and re-initialize with sample data. This action cannot be undone.</string>
+
+    <!-- CX28: Tag editing -->
+    <string name="action_edit_tags">Edit Tags</string>
+    <string name="edit_tags_title">Edit Tags</string>
+    <string name="edit_tags_hint">Comma-separated, e.g. Satellite, Ku-band</string>
+
+    <!-- CX29: Batch delete feedback -->
+    <string name="batch_deleted">Deleted %1$d link(s)</string>
+
+    <string name="saving">Saving…</string>
+    <!-- Round 8 improvements -->
+    <string name="export_failed">Export failed</string>
+    <string name="data_reset">Data reset to defaults</string>
+    <string name="link_deleted">Link deleted</string>
+
+    <!-- Round 9: empty results state -->
+    <string name="results_empty_title">No Nodes</string>
+    <string name="results_empty_desc">Add modules in the editor to see link budget results</string>
+    <string name="editor_guide_title">Quick Guide</string>
+    <string name="editor_guide_desc">Welcome to the link budget editor! Here are the basics:</string>
+    <string name="editor_guide_step1">Tap a node to view and edit its parameters</string>
+    <string name="editor_guide_step2">The bottom bar shows your current link budget — tap it for full analysis</string>
+    <string name="editor_guide_step3">Use undo/redo if you make a change you don\'t like</string>
+    <string name="editor_guide_dismiss">Got it</string>
+
+    <!-- UX3: In-app help -->
+    <string name="help_title">Usage Guide</string>
+    <string name="help_intro">ProRF calculates RF link budgets — accounting for all gains and losses from transmitter to receiver — giving you margin, SNR, EIRP, and sensitivity in real time.</string>
+    <string name="help_nodes_title">Node Types</string>
+    <string name="help_nodes_body">TX  Signal source, amplifiers, TX antenna. Add power and gain to the chain.\n\nLOSS  Cables, filters, attenuators. Reduce signal power.\n\nPROP  Free-space loss, rain fading, atmospheric absorption. Calculated from global frequency and distance.\n\nRX  RX antenna, LNA, mixer, receiver. Friis cascade determines the system noise figure.</string>
+    <string name="help_metrics_title">Key Metrics</string>
+    <string name="help_metrics_body">EIRP  Power at the last TX node (dBm).\n\nSNR  Signal above the noise floor at the receiver (dB).\n\nMargin  SNR minus receiver sensitivity. Positive = link closes.\n\nSensitivity  Minimum detectable signal, set by bandwidth, noise figure, and temperature.</string>
+    <string name="help_tips_title">Tips</string>
+    <string name="help_tips_body">Arrange nodes top-to-bottom: TX chain → propagation → RX chain.\n\nGlobal Frequency and Distance control the free-space path loss.\n\nGray \"Reference\" parameters are saved for notes but don\'t affect this calculation.\n\nTap \"Details →\" in the results bar to open full analysis.</string>
+
+    <!-- Round 14: Relative time -->
+    <string name="time_just_now">just now</string>
+    <string name="time_minutes_ago">%1$d min ago</string>
+    <string name="time_hours_ago">%1$d hours ago</string>
+    <string name="time_days_ago">%1$d days ago</string>
+
+    <!-- Round 14: Sankey context line -->
+    <string name="sankey_context">%1$s · %2$s km · %3$s MHz</string>
+</resources>

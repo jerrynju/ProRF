@@ -1,0 +1,262 @@
+<resources>
+    <string name="app_name">ProRF</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">首页</string>
+    <string name="tab_templates">模板库</string>
+    <string name="tab_profile">我的</string>
+
+    <!-- Home -->
+    <string name="home_subtitle">射频链路预算计算平台</string>
+    <string name="search_hint">搜索链路、标签…</string>
+    <string name="my_links">我的链路</string>
+    <string name="action_new">+ 新建</string>
+    <string name="recommended_templates">快速模板</string>
+    <string name="status_ok">正常</string>
+    <string name="status_warn">告警</string>
+    <string name="metric_margin">链路余量</string>
+    <string name="metric_rx_power">接收功率</string>
+    <string name="metric_eirp">EIRP</string>
+    <string name="metric_nodes">节点数</string>
+    <string name="metric_snr">SNR</string>
+    <string name="unit_count">个</string>
+    <string name="last_modified">最近修改 · %1$s</string>
+    <string name="delete_link_title">删除链路</string>
+    <string name="delete_link_message">确定要删除「%1$s」吗？此操作不可恢复。</string>
+    <string name="action_delete">删除</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_ok">确定</string>
+    <string name="back">返回</string>
+
+    <!-- Templates -->
+    <string name="templates_title">模板库</string>
+    <string name="templates_subtitle">从典型射频链路场景快速开始</string>
+    <string name="use_template">使用模板</string>
+    <string name="template_modules">%1$d 个模块</string>
+    <string name="tpl_sat">卫星通信</string>
+    <string name="tpl_sat_desc">Ku 频段卫星下行链路，含收发天线与自由空间损耗</string>
+    <string name="tpl_5g">5G NR</string>
+    <string name="tpl_5g_desc">3.5GHz 5G 宏站到手机链路，含低噪放链路</string>
+    <string name="tpl_mw">微波链路</string>
+    <string name="tpl_mw_desc">18GHz 点对点回传，抛物面天线</string>
+    <string name="tpl_radar_name">雷达系统</string>
+    <string name="tpl_radar_desc">完整雷达链路预算：发射机、传播路径与接收链路</string>
+    <string name="tpl_blank">空白链路</string>
+    <string name="tpl_blank_desc">最简 发射 → 自由空间 → 接收 链路骨架</string>
+
+    <!-- Editor -->
+    <string name="action_save">保存</string>
+    <string name="saved">已保存</string>
+    <string name="g_freq">频率</string>
+    <string name="g_bw">带宽</string>
+    <string name="g_dist">距离</string>
+    <string name="g_temp">温度</string>
+    <string name="global_params">全局参数</string>
+    <string name="g_freq_full">工作频率</string>
+    <string name="g_bw_full">信号带宽</string>
+    <string name="g_dist_full">传输距离</string>
+    <string name="g_temp_full">系统温度</string>
+    <string name="apply_params">应用参数</string>
+    <string name="results_bar_title">链路预算结果</string>
+    <string name="view_details">查看详情 →</string>
+    <string name="module_of_kind">%1$s 模块</string>
+    <string name="params_section">参数设置</string>
+    <string name="params_reference">参考值（不影响计算）</string>
+    <string name="params_by_global">此模块的参数由全局设置决定</string>
+    <string name="move_up">↑ 上移</string>
+    <string name="move_down">↓ 下移</string>
+    <string name="pick_module">选择模块</string>
+    <string name="cat_all">全部</string>
+    <string name="cat_tx">发射端</string>
+    <string name="cat_loss">损耗</string>
+    <string name="cat_prop">传播</string>
+    <string name="cat_rx">接收端</string>
+
+    <!-- Results -->
+    <string name="link_analysis">链路分析</string>
+    <string name="tab_summary">摘要</string>
+    <string name="tab_table">明细</string>
+    <string name="tab_chart">图表</string>
+    <string name="tab_sankey">桑基图</string>
+    <string name="metric_noise_floor">噪声底</string>
+    <string name="metric_sensitivity">灵敏度门限</string>
+    <string name="link_status">链路状态</string>
+    <string name="link_ok">链路正常 ✓</string>
+    <string name="link_warn">链路告警 !</string>
+    <string name="margin_ok">余量充足 %1$s dB</string>
+    <string name="margin_low">余量不足 %1$s dB</string>
+    <string name="link_advice">建议增加发射功率、提高天线增益或缩短传输距离。</string>
+    <string name="col_module">模块</string>
+    <string name="col_gain">增益</string>
+    <string name="col_loss">损耗</string>
+    <string name="col_power">输出功率</string>
+    <string name="chart_title">SNR / 余量 vs 传输距离</string>
+    <string name="legend_snr">SNR (dB)</string>
+    <string name="legend_margin">链路余量 (dB)</string>
+    <string name="legend_distance">当前距离</string>
+    <string name="chart_x_label">距离 (km, 对数)</string>
+    <string name="sankey_title">功率流向 (Sankey)</string>
+    <string name="legend_gain">增益</string>
+    <string name="legend_loss">损耗</string>
+    <string name="legend_power">输出功率</string>
+    <string name="no_data">无数据</string>
+    <string name="no_chart_data">无图表数据</string>
+
+    <!-- Profile -->
+    <string name="profile_name">RF 工程师</string>
+    <string name="profile_caption">ProRF · 免费离线使用</string>
+    <string name="theme_style">主题风格</string>
+    <string name="theme_light">☀️ 浅色</string>
+    <string name="theme_dark">🌙 深色</string>
+    <string name="theme_carbon">⚡ 碳素</string>
+    <string name="other_settings">其他设置</string>
+    <string name="setting_language">语言</string>
+    <string name="setting_language_value">跟随系统</string>
+    <string name="setting_units">计算单位</string>
+    <string name="setting_units_value">国际单位 SI</string>
+    <string name="setting_autosave">自动保存</string>
+    <string name="setting_save_mode">保存方式</string>
+    <string name="setting_on">已开启</string>
+    <string name="setting_manual">手动</string>
+    <string name="setting_about">关于 ProRF</string>
+
+    <!-- UI/UX Enhancement strings -->
+    <string name="empty_links_title">暂无链路</string>
+    <string name="empty_links_subtitle">创建你的第一个 RF 链路预算</string>
+    <string name="empty_search">未找到结果</string>
+    <string name="action_new_link">新建链路</string>
+    <string name="action_rename">重命名</string>
+    <string name="action_duplicate">复制链路</string>
+    <string name="action_copy_node">复制</string>
+    <string name="action_undo">撤销</string>
+    <string name="action_redo">重做</string>
+    <string name="action_export">导出</string>
+    <string name="action_export_json">导出 JSON</string>
+    <string name="action_share">分享</string>
+    <string name="export_json_filename">链路_%1$s.json</string>
+    <string name="export_success">导出成功</string>
+    <string name="action_reset_params">重置为默认</string>
+    <string name="delete_node_title">删除节点</string>
+    <string name="delete_node_message">删除「%1$s」？此操作不可撤销。</string>
+    <string name="rename_link_title">重命名链路</string>
+    <string name="rename_link_hint">输入新名称</string>
+    <string name="rename_node_title">重命名节点</string>
+    <string name="sort_recent">最近</string>
+    <string name="sort_name">名称</string>
+    <string name="sort_margin">余量</string>
+    <string name="filter_all_tags">全部</string>
+    <string name="preset_5g">5G 3.5GHz</string>
+    <string name="preset_satellite">卫星 Ku</string>
+    <string name="preset_microwave">微波 18G</string>
+    <string name="preset_radar">雷达 X波段</string>
+    <string name="about_title">关于 ProRF</string>
+    <string name="about_version">版本 %1$s</string>
+    <string name="about_description">专业 RF 链路预算计算器。\n离线 · 免费 · 无广告 · 零权限。</string>
+    <string name="export_summary_title">%1$s — 链路预算摘要</string>
+    <string name="export_margin">链路余量: %1$s dB</string>
+    <string name="export_rx_power">接收功率: %1$s dBm</string>
+    <string name="export_eirp">EIRP: %1$s dBm</string>
+    <string name="export_snr">SNR: %1$s dB</string>
+    <string name="export_nodes">节点数: %1$d</string>
+    <string name="export_freq">频率: %1$s</string>
+    <string name="export_footer">由 ProRF 生成</string>
+    <string name="action_confirm">确定</string>
+    <string name="module_unknown">未知模块</string>
+    <string name="link_duplicated">链路已复制</string>
+    <string name="filter_fav">仅显示收藏</string>
+    <string name="action_toggle_fav">切换收藏状态</string>
+    <string name="action_import">导入</string>
+    <string name="sort_label">排序方式</string>
+    <string name="editor_empty_hint">点击上方 + 添加第一个模块</string>
+
+    <!-- Settings dialog strings -->
+    <string name="language_dialog_title">语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">中文</string>
+    <string name="units_dialog_title">计算单位</string>
+    <string name="units_si">国际单位 (SI)</string>
+    <string name="units_imperial">英制</string>
+
+    <!-- Batch operations -->
+    <string name="action_select">选择</string>
+    <string name="action_select_all">全选</string>
+    <string name="action_deselect_all">取消全选</string>
+    <string name="action_delete_selected">删除所选</string>
+    <string name="action_export_selected">导出所选</string>
+    <string name="selected_count">已选择 %1$d 个</string>
+    <string name="batch_delete_title">删除所选</string>
+    <string name="batch_delete_message">确定删除 %1$d 个链路？此操作不可恢复。</string>
+    <string name="batch_export_title">导出链路</string>
+
+    <!-- CX15: 未保存变更 -->
+    <string name="unsaved_changes_title">未保存的更改</string>
+    <string name="unsaved_changes_message">你有未保存的更改，离开前是否保存？</string>
+    <string name="action_save_and_exit">保存并退出</string>
+    <string name="action_discard">放弃</string>
+
+    <!-- CX17: 导入反馈 -->
+    <string name="import_success">已导入 %1$d 个链路</string>
+    <string name="import_failed">导入失败</string>
+
+    <!-- CX19: 查看全部 -->
+    <string name="see_all">查看全部 →</string>
+
+    <!-- CX20: 引导 -->
+    <string name="onboarding_title">欢迎使用 ProRF</string>
+    <string name="onboarding_desc">专业射频链路预算计算器。从模板创建链路或从空白开始，编辑节点参数，实时分析结果。</string>
+    <string name="onboarding_action">开始使用</string>
+
+    <!-- 引导功能点 -->
+    <string name="onboarding_offline">离线使用 – 无需联网</string>
+    <string name="onboarding_free">免费 – 无广告</string>
+    <string name="onboarding_private">隐私保护 – 数据不出设备</string>
+    <string name="onboarding_noperms">零权限申请</string>
+
+    <!-- CX19: 清除数据 -->
+    <string name="clear_data_title">清除所有数据</string>
+    <string name="clear_data_message">这将删除所有链路并重新初始化示例数据。此操作不可恢复。</string>
+
+    <!-- CX28: 标签编辑 -->
+    <string name="action_edit_tags">编辑标签</string>
+    <string name="edit_tags_title">编辑标签</string>
+    <string name="edit_tags_hint">用逗号分隔，如：卫星, Ku频段</string>
+
+    <!-- CX29: 批量删除反馈 -->
+    <string name="batch_deleted">已删除 %1$d 个链路</string>
+
+    <!-- Round 8 improvements -->
+    <string name="saving">保存中…</string>
+    <string name="export_failed">导出失败</string>
+    <string name="data_reset">数据已重置为默认</string>
+    <string name="link_deleted">链路已删除</string>
+
+    <!-- 第九轮：空结果状态 -->
+    <string name="results_empty_title">暂无节点</string>
+    <string name="results_empty_desc">在编辑器中添加模块，查看链路预算结果</string>
+    <string name="editor_guide_title">快速指南</string>
+    <string name="editor_guide_desc">欢迎使用链路预算编辑器！以下是基本操作：</string>
+    <string name="editor_guide_step1">点击节点可查看和编辑其参数</string>
+    <string name="editor_guide_step2">底部栏显示当前链路预算 — 点击可查看完整分析</string>
+    <string name="editor_guide_step3">使用撤销/重做按钮可以回退操作</string>
+    <string name="editor_guide_dismiss">知道了</string>
+
+    <!-- UX3: 使用帮助 -->
+    <string name="help_title">使用帮助</string>
+    <string name="help_intro">ProRF 计算射频链路预算——核算从发射机到接收机路径上的所有增益与损耗——实时输出余量、SNR、EIRP 和灵敏度。</string>
+    <string name="help_nodes_title">节点类型</string>
+    <string name="help_nodes_body">TX（发射端）  信号源、功率放大器、发射天线，沿链路增加信号功率。\n\nLOSS（损耗）  电缆、滤波器、衰减器，降低信号功率。\n\nPROP（传播）  自由空间损耗、雨衰、大气吸收，由全局频率和距离自动计算。\n\nRX（接收端）  接收天线、低噪放、混频器、接收机，通过 Friis 级联确定系统噪声系数。</string>
+    <string name="help_metrics_title">关键指标</string>
+    <string name="help_metrics_body">EIRP  最后一个发射端节点处的功率（dBm）。\n\nSNR  接收机处信号高出噪声基底的值（dB）。\n\n链路余量  SNR 减去接收机灵敏度门限。正值表示链路正常建立。\n\n灵敏度  最小可检测信号，由带宽、噪声系数和系统温度决定。</string>
+    <string name="help_tips_title">使用技巧</string>
+    <string name="help_tips_body">节点从上到下排列：发射链 → 传播路径 → 接收链。\n\n全局频率和距离决定自由空间损耗的计算值。\n\n灰色「参考值」参数会被保存，但不参与当前计算。\n\n点击结果栏中的"查看详情 →"可进入完整分析页面。</string>
+
+    <!-- Round 14: Relative time -->
+    <string name="time_just_now">刚刚</string>
+    <string name="time_minutes_ago">%1$d 分钟前</string>
+    <string name="time_hours_ago">%1$d 小时前</string>
+    <string name="time_days_ago">%1$d 天前</string>
+
+    <!-- Round 14: Sankey context line -->
+    <string name="sankey_context">%1$s · %2$s km · %3$s MHz</string>
+</resources>
