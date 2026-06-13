@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -45,7 +47,7 @@ fun Inspector(
     onNodeDeleteRequested: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.padding(16.dp)) {
+    Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text(
             text = definition.displayName,
             style = MaterialTheme.typography.titleMedium,

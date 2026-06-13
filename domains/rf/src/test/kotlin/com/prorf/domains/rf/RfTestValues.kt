@@ -15,5 +15,6 @@ fun metersQ(value: Double) = Quantity(value, PhysicalUnit.METER)
 fun dbPerMeterQ(value: Double) = Quantity(value, PhysicalUnit.DB_PER_METER)
 fun countQ(value: Double) = Quantity(value, PhysicalUnit.COUNT)
 
-fun ExecutionResult.outputValue(nodeId: String, portId: String): Double? =
+fun ExecutionResult.outputValue(nodeId: String, portId: String): Double =
     (outputs[nodeId]?.get(portId) as? Quantity)?.value
+        ?: error("No Quantity output '$portId' on node '$nodeId'. Available: ${outputs[nodeId]?.keys}")
