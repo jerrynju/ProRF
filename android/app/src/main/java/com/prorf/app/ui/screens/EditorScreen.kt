@@ -511,8 +511,8 @@ fun NodeCard(node: RfNode, trace: TraceEntry?, selected: Boolean, onClick: () ->
         Modifier
             .fillMaxWidth()
             .scale(if (selected) 1.015f else 1f)
-            .background(if (selected) meta.tint else p.surf, RoundedCornerShape(14.dp))
-            .border(2.dp, if (selected) meta.col else p.line2, RoundedCornerShape(14.dp))
+            .background(if (selected) meta.tint else meta.tint.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
+            .border(2.dp, if (selected) meta.col else meta.col.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -560,7 +560,7 @@ fun NodeCard(node: RfNode, trace: TraceEntry?, selected: Boolean, onClick: () ->
 private fun NodeConnector(pwr: Double?, isLast: Boolean, onAdd: () -> Unit) {
     val p = Prf.colors
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.width(2.dp).height(8.dp).background(p.line))
+        Box(Modifier.width(2.dp).height(6.dp).background(p.line))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             if (pwr != null) {
                 Text(
@@ -573,14 +573,13 @@ private fun NodeConnector(pwr: Double?, isLast: Boolean, onAdd: () -> Unit) {
                 )
             }
             Box(
-                Modifier.size(48.dp).border(1.5.dp, p.line, CircleShape).clickable(onClick = onAdd),
+                Modifier.size(44.dp).border(1.5.dp, p.line, CircleShape).clickable(onClick = onAdd),
                 contentAlignment = Alignment.Center,
-            ) { Text("+", color = p.txt4, fontSize = 14.sp, lineHeight = 14.sp) }
+            ) { Text("+", color = p.txt4, fontSize = 13.sp, lineHeight = 13.sp) }
         }
         if (!isLast) {
-            Box(Modifier.width(2.dp).height(8.dp).background(p.line))
-            Text("▼", fontSize = 8.sp, color = p.txt3)
-        } else Spacer(Modifier.height(4.dp))
+            Box(Modifier.width(2.dp).height(12.dp).background(p.line2))
+        } else Spacer(Modifier.height(2.dp))
     }
 }
 

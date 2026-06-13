@@ -40,7 +40,7 @@ keytool -genkeypair -v -keystore prorf-upload.jks \
 
 #### C2 · Release AAB 构建
 - [x] 确认 `versionCode = 1`，`versionName = "1.0.0"`
-- [ ] `./gradlew bundleRelease` 生成 AAB
+- [x] `./gradlew bundleRelease` 生成 AAB
 - [ ] **R8 回归验证**（⚠️ 最常见翻车点）：用 release 包完整测试序列化读写旧存档、三主题切换、横竖屏旋转
 
 #### C3 · 正式应用图标

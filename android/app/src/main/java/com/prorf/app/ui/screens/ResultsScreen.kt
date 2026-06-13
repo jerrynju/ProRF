@@ -387,14 +387,14 @@ private fun SankeyCard(r: LinkResult, globals: GlobalParams) {
         val labelColor = android.graphics.Color.argb(
             255, (p.txt3.red * 255).toInt(), (p.txt3.green * 255).toInt(), (p.txt3.blue * 255).toInt(),
         )
-        Canvas(Modifier.fillMaxWidth().aspectRatio(1.5f)) {
+        Canvas(Modifier.fillMaxWidth().aspectRatio(2.2f)) {
             val n = r.trace.size
-            val gap = 16f
+            val gap = 24f
             val left = 40f
-            val nodeW = (size.width - left - 16f - gap * (n - 1)) / n
+            val nodeW = max(32f, (size.width - left - 16f - gap * (n - 1)) / n * 0.7f)
             val cy = size.height / 2
             val maxP = max(r.trace.maxOf { kotlin.math.abs(it.pwr) }, 10.0)
-            fun barH(v: Double) = max(8f, (kotlin.math.abs(v) / maxP * size.height * 0.36).toFloat())
+            fun barH(v: Double) = max(6f, (kotlin.math.abs(v) / maxP * size.height * 0.32).toFloat())
             val paint = android.graphics.Paint().apply { color = labelColor; textSize = 24f; textAlign = android.graphics.Paint.Align.CENTER }
             r.trace.forEachIndexed { i, t ->
                 val meta = p.kind(t.kind)

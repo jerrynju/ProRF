@@ -49,6 +49,8 @@ fun ProfileScreen(
 
     // Current selections
     var langChoice by remember { mutableStateOf(prefs.getString("lang", "system") ?: "system") }
+    var showUnitsDialog by remember { mutableStateOf(false) }
+    var showSaveModeDialog by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().background(p.bg).verticalScroll(rememberScrollState())) {
         // Avatar header
@@ -106,25 +108,31 @@ fun ProfileScreen(
             }
             HorizontalDivider(color = p.line2)
 
-            // Units row - display only (SI only; other units not yet implemented)
+            // Units row - clickable
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                Modifier.fillMaxWidth().clickable { showUnitsDialog = true }.padding(vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.setting_units), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = p.txt2)
-                Text(stringResource(R.string.units_si), fontSize = 13.sp, color = p.txt4)
+                Text(stringResource(R.string.setting_units), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = p.txt1)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.units_si), fontSize = 13.sp, color = p.txt3)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = p.txt4, modifier = Modifier.size(18.dp))
+                }
             }
             HorizontalDivider(color = p.line2)
 
-            // Auto save row (display only - always on)
+            // Auto save row - clickable
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                Modifier.fillMaxWidth().clickable { showSaveModeDialog = true }.padding(vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(stringResource(R.string.setting_save_mode), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = p.txt1)
-                Text(stringResource(R.string.setting_on), fontSize = 13.sp, color = p.txt3)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.setting_on), fontSize = 13.sp, color = p.txt3)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = p.txt4, modifier = Modifier.size(18.dp))
+                }
             }
             HorizontalDivider(color = p.line2)
 
@@ -275,6 +283,60 @@ fun ProfileScreen(
                 TextButton(onClick = { showClearDialog = false }) {
                     Text(stringResource(R.string.action_cancel))
                 }
+            },
+        )
+    }
+
+    // Units selection dialog
+    if (showUnitsDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnitsDialog = false },
+            title = { Text(stringResource(R.string.units_dialog_title)) },
+            text = {
+                Column {
+                    listOf(
+                        "si" to stringResource(R.string.units_si),
+                    ).forEach { (value, label) ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = true, onClick = { showUnitsDialog = false })
+                            Spacer(Modifier.width(8.dp))
+                            Text(label, fontSize = 14.sp, color = p.txt1)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showUnitsDialog = false }) { Text(stringResource(R.string.action_ok)) }
+            },
+        )
+    }
+
+    // Save mode selection dialog
+    if (showSaveModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveModeDialog = false },
+            title = { Text(stringResource(R.string.setting_save_mode)) },
+            text = {
+                Column {
+                    listOf(
+                        "auto" to stringResource(R.string.setting_on),
+                    ).forEach { (value, label) ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = true, onClick = { showSaveModeDialog = false })
+                            Spacer(Modifier.width(8.dp))
+                            Text(label, fontSize = 14.sp, color = p.txt1)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSaveModeDialog = false }) { Text(stringResource(R.string.action_ok)) }
             },
         )
     }

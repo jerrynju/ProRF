@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -157,7 +158,8 @@ private fun AppRoot(
                     onboardingDone = true
                 })
             } else {
-            when (val ov = overlay) {
+            Crossfade(targetState = overlay, label = "overlay") { ov ->
+            when (ov) {
                 is Overlay.Editor -> {
                     // CX2: refresh workflow reference from store to avoid stale data
                     val freshWf = store.get(ov.workflow.id) ?: ov.workflow
@@ -177,7 +179,8 @@ private fun AppRoot(
                         overlay = if (expanded) null else Overlay.Editor(freshWf)
                     }
                 }
-                null -> when (tab) {
+                else -> Crossfade(targetState = tab, label = "tab") { currentTab ->
+                when (currentTab) {
                     Tab.Home -> HomeScreen(
                         workflows = store.workflows,
                         onOpen = { overlay = Overlay.Editor(it) },
@@ -248,6 +251,8 @@ private fun AppRoot(
                         }
                     })
                 }
+                }
+            }
             }
             }
         }

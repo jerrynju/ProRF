@@ -79,7 +79,7 @@ fun MetricTile(label: String, value: String, unit: String, accent: Color, modifi
         Spacer(Modifier.height(3.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                value, fontSize = if (big) 26.sp else 19.sp, fontWeight = FontWeight.ExtraBold,
+                value, fontSize = if (big) 26.sp else 19.sp, fontWeight = if (big) FontWeight.Bold else FontWeight.SemiBold,
                 color = accent, fontFamily = NumericFont,
             )
             Spacer(Modifier.width(4.dp))
@@ -97,7 +97,7 @@ fun MiniStat(label: String, value: String, unit: String, accent: Color, modifier
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
         Text(label, fontSize = 9.sp, color = p.txt4, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = accent, fontFamily = NumericFont, maxLines = 1)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = accent, fontFamily = NumericFont, maxLines = 1)
         Text(unit, fontSize = 9.sp, color = p.txt4)
     }
 }
@@ -173,11 +173,11 @@ private fun BasicNumberField(text: String, onText: (String) -> Unit, onFocusLost
         onValueChange = onText,
         singleLine = true,
         textStyle = LocalTextStyle.current.copy(
-            fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = NumericFont, color = p.prim,
+            fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = NumericFont, color = p.prim,
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
         ),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        modifier = Modifier.width(80.dp).height(40.dp)
+        modifier = Modifier.width(100.dp).height(44.dp)
             .onFocusChanged { state ->
                 if (hasFocus && !state.isFocused) onFocusLost()
                 hasFocus = state.isFocused

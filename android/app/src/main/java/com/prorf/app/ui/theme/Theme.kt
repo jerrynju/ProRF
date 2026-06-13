@@ -15,15 +15,15 @@ import androidx.compose.ui.unit.sp
 import androidx.annotation.StringRes
 import com.prorf.app.data.NodeKind
 
-/** Unified numeric typeface — swap this one line to change all metric displays. */
-val NumericFont: FontFamily = FontFamily.Monospace
+/** Unified numeric typeface — uses system default for better legibility and elegance */
+val NumericFont: FontFamily = FontFamily.Default
 
 object NumStyle {
-    val xl  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.ExtraBold, fontSize = 26.sp)
-    val lg  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp)
-    val md  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.Bold,      fontSize = 14.sp)
-    val sm  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.Bold,      fontSize = 12.sp)
-    val xs  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.SemiBold,  fontSize = 10.sp)
+    val xl  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.Bold, fontSize = 26.sp)
+    val lg  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.Bold, fontSize = 19.sp)
+    val md  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.SemiBold,      fontSize = 14.sp)
+    val sm  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.SemiBold,      fontSize = 12.sp)
+    val xs  = TextStyle(fontFamily = NumericFont, fontWeight = FontWeight.Medium,  fontSize = 10.sp)
 }
 
 enum class AppTheme(@StringRes val labelRes: Int) {
