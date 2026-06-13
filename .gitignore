@@ -11,8 +11,28 @@ android/.idea/
 *.apk
 *.aab
 
-# Emulator logs
+# Emulator logs and screenshots
 *.log
+emulator-*.log
+shot-*.png
+start-emulator.ps1
+
+# Spec source files (converted to docs/spec.md)
+docx_text.md
+docx_unpacked/
+"ProRF Agent Build Spec v1.0.docx"
+
+# Local environment
+local.properties
+
+# Duplicate spec files
+docs/spec-text.txt
+docs/spec-unpacked/
+
+# Build artifacts
+apps/prorf-android/build/
+android/app/build/
+build/
 
 # IDE / Config
 .qoder/
