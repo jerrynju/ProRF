@@ -157,6 +157,7 @@ fun WorkflowEditorScreen(workflowId: String, onBack: () -> Unit) {
                             connectedEdges = connectedEdges,
                             onEdgeDeleteRequested = { edgeId -> vm.deleteEdge(edgeId) },
                             onNodeDeleteRequested = { vm.deleteNode(selectedNode.id) },
+                            onNodeRenameRequested = { newLabel -> vm.renameNode(selectedNode.id, newLabel) },
                             modifier = Modifier.width(280.dp).fillMaxHeight(),
                         )
                     }

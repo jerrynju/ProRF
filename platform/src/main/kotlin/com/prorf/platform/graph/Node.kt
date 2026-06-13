@@ -27,7 +27,7 @@ data class ParameterDefinition(
 
 /**
  * Runtime instance of a node in a workflow graph.
- * Contains only: type reference, parameter values, layout position.
+ * Contains only: type reference, parameter values, layout position, optional user label.
  * No computation, no domain knowledge.
  */
 data class NodeInstance(
@@ -35,6 +35,7 @@ data class NodeInstance(
     val typeId: String,
     val parameters: Map<String, Any> = emptyMap(),
     val position: NodePosition = NodePosition(),
+    val label: String? = null,
 )
 
 data class NodePosition(val x: Float = 0f, val y: Float = 0f)

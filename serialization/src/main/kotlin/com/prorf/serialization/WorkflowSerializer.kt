@@ -34,6 +34,7 @@ class WorkflowSerializer {
                     parameters = node.parameters.mapValues { (_, v) -> encodeValue(v) },
                     x = node.position.x,
                     y = node.position.y,
+                    label = node.label,
                 )
             },
             connections = graph.edges.map { edge ->
@@ -62,6 +63,7 @@ class WorkflowSerializer {
                     typeId = n.typeId,
                     parameters = n.parameters.mapValues { (_, v) -> parseValue(v) },
                     position = NodePosition(n.x, n.y),
+                    label = n.label,
                 )
             },
             edges = doc.connections.map { c ->

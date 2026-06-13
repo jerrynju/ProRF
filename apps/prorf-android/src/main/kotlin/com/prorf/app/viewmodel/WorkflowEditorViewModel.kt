@@ -51,7 +51,7 @@ sealed interface WorkflowEditorState {
                     }
                     ?: ""
                 node.toUiCard(
-                    displayName = node.typeId.substringAfterLast('.'),
+                    displayName = node.label ?: node.typeId.substringAfterLast('.'),
                     isSelected = node.id == selectedNodeId,
                     status = status,
                     outputSummary = summary,
@@ -217,6 +217,17 @@ class WorkflowEditorViewModel(
                 executionErrors = result.errors,
             )
         }
+    }
+
+    fun renameNode(nodeId: String, newLabel: String) {
+        val ready = _state.value as? WorkflowEditorState.Ready ?: return
+        val updated = ready.graph.copy(
+            nodes = ready.graph.nodes.map { n ->
+                if (n.id == nodeId) n.copy(label = newLabel.ifBlank { null }) else n
+            },
+        )
+        _state.value = ready.copy(graph = updated)
+        autoSave(updated)
     }
 
     fun deleteNode(nodeId: String) {

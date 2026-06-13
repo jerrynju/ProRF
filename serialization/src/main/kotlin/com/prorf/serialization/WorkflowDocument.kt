@@ -26,6 +26,7 @@ data class NodeDocument(
     val parameters: Map<String, String> = emptyMap(),
     val x: Float = 0f,
     val y: Float = 0f,
+    val label: String? = null,
 )
 
 @Serializable

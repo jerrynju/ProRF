@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -16,10 +18,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.prorf.engineering.quantity.Quantity
 import com.prorf.platform.graph.NodeDefinition
@@ -43,13 +52,37 @@ fun Inspector(
     connectedEdges: List<UiEdgeRow> = emptyList(),
     onEdgeDeleteRequested: ((edgeId: String) -> Unit)? = null,
     onNodeDeleteRequested: (() -> Unit)? = null,
+    onNodeRenameRequested: ((newLabel: String) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
-        Text(
-            text = definition.displayName,
-            style = MaterialTheme.typography.titleMedium,
-        )
+        if (onNodeRenameRequested != null) {
+            var nameText by remember(nodeInstance.id) {
+                mutableStateOf(nodeInstance.label ?: definition.displayName)
+            }
+            OutlinedTextField(
+                value = nameText,
+                onValueChange = { nameText = it },
+                label = { Text("Node Name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    onNodeRenameRequested(nameText.trim().ifEmpty { definition.displayName })
+                }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focus ->
+                        if (!focus.isFocused) {
+                            onNodeRenameRequested(nameText.trim().ifEmpty { definition.displayName })
+                        }
+                    },
+            )
+        } else {
+            Text(
+                text = nodeInstance.label ?: definition.displayName,
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
         Text(
             text = "ID: ${nodeInstance.id}",
             style = MaterialTheme.typography.bodySmall,
