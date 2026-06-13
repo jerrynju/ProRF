@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.size
 import com.prorf.ui.model.NodeStatus
 import com.prorf.ui.model.UiNodeCard
 
@@ -73,7 +74,7 @@ private fun StatusDot(status: NodeStatus) {
         NodeStatus.SUCCESS -> Color(0xFF388E3C)
         NodeStatus.ERROR -> Color(0xFFD32F2F)
     }
-    androidx.compose.foundation.Canvas(modifier = Modifier) {
-        drawCircle(color = color, radius = 4f)
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(10.dp)) {
+        drawCircle(color = color, radius = 4.dp.toPx())
     }
 }

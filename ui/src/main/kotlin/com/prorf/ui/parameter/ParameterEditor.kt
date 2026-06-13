@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -80,9 +81,20 @@ private fun ParameterRow(
                     else -> KeyboardType.Text
                 },
             ),
-            modifier = Modifier.width(120.dp),
+            modifier = Modifier.width(100.dp),
             textStyle = MaterialTheme.typography.bodyMedium,
         )
+        if (definition.dataType == "quantity") {
+            val unitSymbol = (currentValue as? Quantity)?.unit?.symbol ?: ""
+            Text(
+                text = unitSymbol,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .widthIn(min = 28.dp),
+            )
+        }
     }
 }
 

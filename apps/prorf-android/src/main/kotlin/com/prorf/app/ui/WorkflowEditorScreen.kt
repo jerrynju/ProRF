@@ -1,6 +1,7 @@
 package com.prorf.app.ui
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -163,13 +164,19 @@ fun WorkflowEditorScreen(workflowId: String, onBack: () -> Unit) {
                 }
 
                 if (s.executionErrors.isNotEmpty()) {
-                    Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.BottomCenter) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                    ) {
                         Column {
                             s.executionErrors.forEach { err ->
                                 Text(
                                     "Error [${err.nodeId}]: ${err.message}",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
                                 )
                             }
                         }

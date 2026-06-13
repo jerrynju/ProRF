@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.prorf.platform.graph.Edge
 import com.prorf.ui.model.UiNodeCard
@@ -78,12 +79,21 @@ private fun EdgeOverlay(
     connectingFromNodeId: String? = null,
 ) {
     val nodeIndex = nodes.associateBy { it.nodeId }
+    val density = LocalDensity.current
+    // Node card width is 160dp, height ~50dp. These constants convert dp→px for Canvas drawing.
+    val nodeWidthPx = with(density) { 160.dp.toPx() }
+    val nodeHalfHeightPx = with(density) { 20.dp.toPx() }
     Canvas(modifier = Modifier.fillMaxSize()) {
         for (edge in edges) {
             val from = nodeIndex[edge.fromNodeId] ?: continue
             val to = nodeIndex[edge.toNodeId] ?: continue
-            val start = Offset(from.x + 80f, from.y + 24f)
-            val end = Offset(to.x, to.y + 24f)
+            // Node positions are stored in dp; convert to px for Canvas coordinates.
+            val startX = with(density) { from.x.dp.toPx() } + nodeWidthPx
+            val startY = with(density) { from.y.dp.toPx() } + nodeHalfHeightPx
+            val endX = with(density) { to.x.dp.toPx() }
+            val endY = with(density) { to.y.dp.toPx() } + nodeHalfHeightPx
+            val start = Offset(startX, startY)
+            val end = Offset(endX, endY)
             val cp1 = Offset(start.x + (end.x - start.x) * 0.5f, start.y)
             val cp2 = Offset(end.x - (end.x - start.x) * 0.5f, end.y)
             drawPath(
@@ -98,10 +108,12 @@ private fun EdgeOverlay(
         if (connectingFromNodeId != null) {
             val fromCard = nodeIndex[connectingFromNodeId]
             if (fromCard != null) {
+                val leftPx = with(density) { fromCard.x.dp.toPx() }
+                val topPx = with(density) { fromCard.y.dp.toPx() }
                 drawRect(
                     color = Color(0xFF6650A4),
-                    topLeft = Offset(fromCard.x - 4f, fromCard.y - 4f),
-                    size = Size(168f, 60f),
+                    topLeft = Offset(leftPx - 4f, topPx - 4f),
+                    size = Size(nodeWidthPx + 8f, nodeHalfHeightPx * 2f + 8f),
                     style = Stroke(
                         width = 3f,
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 5f)),
@@ -118,13 +130,17 @@ private fun NodeCardItem(
     onTap: () -> Unit,
     onDrag: (Float, Float) -> Unit,
 ) {
+    val density = LocalDensity.current
     Box(
         modifier = Modifier
             .offset(card.x.dp, card.y.dp)
             .pointerInput(card.nodeId) { detectTapGestures { onTap() } }
             .pointerInput(card.nodeId) {
                 detectDragGestures { _, dragAmount ->
-                    onDrag(dragAmount.x, dragAmount.y)
+                    // dragAmount is in pixels; positions are stored in dp
+                    with(density) {
+                        onDrag(dragAmount.x.toDp().value, dragAmount.y.toDp().value)
+                    }
                 }
             },
     ) {
