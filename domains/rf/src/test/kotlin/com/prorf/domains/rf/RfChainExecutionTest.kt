@@ -60,7 +60,7 @@ class RfChainExecutionTest {
         )
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
-        val out = result.outputValue("amp", "rf_out")
+        val out = result.requireOutputValue("amp", "rf_out")
         assertEquals(30.0, out, 0.001)
     }
 
@@ -76,7 +76,7 @@ class RfChainExecutionTest {
         )
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
-        val out = result.outputValue("att", "rf_out")
+        val out = result.requireOutputValue("att", "rf_out")
         assertEquals(25.0, out, 0.001)
     }
 

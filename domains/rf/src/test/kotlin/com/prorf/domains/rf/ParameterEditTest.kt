@@ -31,7 +31,7 @@ class ParameterEditTest {
         val baseGraph = twoNodeGraph(gainDb = 10.0)
         val result1 = engine.execute(baseGraph, ExecutionContext())
         assertTrue(result1.isSuccess)
-        val out1 = result1.outputValue("amp", "rf_out")
+        val out1 = result1.requireOutputValue("amp", "rf_out")
         assertEquals(40.0, out1, 0.001, "30 dBm + 10 dB gain = 40 dBm")
 
         val updatedGraph = baseGraph.copy(
@@ -41,7 +41,7 @@ class ParameterEditTest {
         )
         val result2 = engine.execute(updatedGraph, ExecutionContext())
         assertTrue(result2.isSuccess)
-        val out2 = result2.outputValue("amp", "rf_out")
+        val out2 = result2.requireOutputValue("amp", "rf_out")
         assertEquals(50.0, out2, 0.001, "30 dBm + 20 dB gain = 50 dBm")
     }
 
@@ -50,7 +50,7 @@ class ParameterEditTest {
         val graph = twoNodeGraph(powerDbm = 0.0, gainDb = 10.0)
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
-        val out = result.outputValue("amp", "rf_out")
+        val out = result.requireOutputValue("amp", "rf_out")
         assertEquals(10.0, out, 0.001, "0 dBm + 10 dB gain = 10 dBm")
     }
 
@@ -58,7 +58,7 @@ class ParameterEditTest {
     fun `parameter edit does not affect other nodes`() {
         val graph = twoNodeGraph(gainDb = 15.0)
         val result = engine.execute(graph, ExecutionContext())
-        val srcOut = result.outputValue("src", "rf_out")
+        val srcOut = result.requireOutputValue("src", "rf_out")
         assertEquals(30.0, srcOut, 0.001, "Source output must remain 30 dBm")
     }
 

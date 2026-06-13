@@ -5,6 +5,7 @@ import com.prorf.domains.rf.count
 import com.prorf.domains.rf.db
 import com.prorf.domains.rf.dbPerMeter
 import com.prorf.domains.rf.dbm
+import com.prorf.domains.rf.gainDb
 import com.prorf.domains.rf.inputPowerDbm
 import com.prorf.domains.rf.meters
 import com.prorf.engineering.quantity.PhysicalUnit
