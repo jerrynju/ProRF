@@ -18,6 +18,6 @@ fun countQ(value: Double) = Quantity(value, PhysicalUnit.COUNT)
 fun ExecutionResult.outputValue(nodeId: String, portId: String): Double? =
     (outputs[nodeId]?.get(portId) as? Quantity)?.value
 
-/** Non-null variant for assertions that require a produced output. */
 fun ExecutionResult.requireOutputValue(nodeId: String, portId: String): Double =
-    outputValue(nodeId, portId) ?: error("No output value for $nodeId.$portId")
+    outputValue(nodeId, portId)
+        ?: error("No Quantity output '$portId' on node '$nodeId'. Available: ${outputs[nodeId]?.keys}")

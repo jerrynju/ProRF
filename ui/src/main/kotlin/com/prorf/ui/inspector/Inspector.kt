@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -55,7 +57,7 @@ fun Inspector(
     onNodeRenameRequested: ((newLabel: String) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.padding(16.dp)) {
+    Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
         if (onNodeRenameRequested != null) {
             var nameText by remember(nodeInstance.id) {
                 mutableStateOf(nodeInstance.label ?: definition.displayName)

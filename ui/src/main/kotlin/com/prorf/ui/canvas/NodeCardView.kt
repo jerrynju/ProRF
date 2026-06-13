@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +74,7 @@ private fun StatusDot(status: NodeStatus) {
         NodeStatus.SUCCESS -> Color(0xFF388E3C)
         NodeStatus.ERROR -> Color(0xFFD32F2F)
     }
-    androidx.compose.foundation.Canvas(modifier = Modifier) {
-        drawCircle(color = color, radius = 4f)
+    androidx.compose.foundation.Canvas(modifier = Modifier.size(8.dp)) {
+        drawCircle(color = color, radius = size.minDimension / 2f)
     }
 }
