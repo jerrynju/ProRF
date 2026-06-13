@@ -61,7 +61,7 @@ class RfChainExecutionTest {
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
         val out = result.outputValue("amp", "rf_out")
-        assertEquals(30.0, out, 0.001)
+        assertEquals(30.0, out!!, 0.001)
     }
 
     @Test
@@ -77,7 +77,7 @@ class RfChainExecutionTest {
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
         val out = result.outputValue("att", "rf_out")
-        assertEquals(25.0, out, 0.001)
+        assertEquals(25.0, out!!, 0.001)
     }
 
     // Ku-band GEO satellite link: 30 dBm TX → 20 dB amplifier → 207 dB FSPL → receiver

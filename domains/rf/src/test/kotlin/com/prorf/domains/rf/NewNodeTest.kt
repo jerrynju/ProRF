@@ -74,7 +74,7 @@ class NewNodeTest {
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
         val out = result.outputValue("cable", "rf_out")
-        assertEquals(18.0, out, 1e-9)
+        assertEquals(18.0, out!!, 1e-9)
     }
 
     @Test
@@ -90,7 +90,7 @@ class NewNodeTest {
         val result = engine.execute(graph, ExecutionContext())
         assertTrue(result.isSuccess)
         val out = result.outputValue("flt", "rf_out")
-        assertEquals(13.0, out, 1e-9)
+        assertEquals(13.0, out!!, 1e-9)
     }
 
     @Test
