@@ -314,15 +314,5 @@ private fun formatEdgeValue(value: Any): String = when (value) {
     else -> value.toString()
 }
 
-/** Maps typeId to a category accent color — mirrors NodeCardView's categoryColor without coupling. */
-private fun edgeNodeColor(typeId: String): Color {
-    val name = typeId.substringAfterLast('.')
-    return when {
-        name.contains("Source") || name.contains("Signal") || name.contains("Noise") -> Color(0xFF2F80ED)
-        name.contains("Amplifier") -> Color(0xFF27AE60)
-        name.contains("Attenuator") || name.contains("Cable") || name.contains("Filter") -> Color(0xFFF2994A)
-        name.contains("Loss") || name.contains("Channel") || name.contains("Path") -> Color(0xFF9B51E0)
-        name.contains("Receiver") || name.contains("Sensitivity") -> Color(0xFFEB5757)
-        else -> Color(0xFF2F80ED)
-    }
-}
+/** Category accent color for edges — delegates to NodeCardView's shared function. */
+private fun edgeNodeColor(typeId: String): Color = categoryColor(typeId)

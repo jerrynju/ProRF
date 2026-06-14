@@ -1,0 +1,1031 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProRF 移动端 App 界面设计草案</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --paper: #ffffff;
+      --ink: #162033;
+      --muted: #7d8796;
+      --line: #e7ebf1;
+      --blue: #1f7af8;
+      --tx: #367cf6;
+      --amp: #ff9f2f;
+      --coup: #28c59d;
+      --ant: #8d5cf6;
+      --path: #2bb9b2;
+      --rx: #f3a53f;
+      --good: #20bf75;
+      --bad: #ec5b6c;
+      --warn: #f5a623;
+      --shadow: 0 18px 48px rgba(34, 45, 70, .10);
+      --soft-shadow: 0 8px 24px rgba(34, 45, 70, .08);
+      --radius: 22px;
+      font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .page {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 38px 28px 64px;
+    }
+
+    .brief {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 30px;
+    }
+
+    .brief h1 {
+      margin: 0 0 12px;
+      font-size: 36px;
+      letter-spacing: 0;
+    }
+
+    .brief p {
+      max-width: 820px;
+      margin: 0;
+      color: #526071;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .tokens {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .token {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: var(--soft-shadow);
+    }
+
+    .token b { display: block; font-size: 13px; margin-bottom: 5px; }
+    .token span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(290px, 1fr));
+      gap: 26px;
+      align-items: start;
+    }
+
+    .phone {
+      width: 100%;
+      min-width: 0;
+      aspect-ratio: 390 / 844;
+      background: #10131a;
+      border-radius: 38px;
+      padding: 11px;
+      box-shadow: var(--shadow);
+    }
+
+    .screen {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      background: #fbfcfe;
+      border-radius: 29px;
+      border: 1px solid rgba(255,255,255,.7);
+    }
+
+    .status {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .icons { display: flex; gap: 5px; align-items: center; }
+    .sig, .wifi, .bat {
+      display: inline-block;
+      background: #151b24;
+      border-radius: 2px;
+    }
+    .sig { width: 14px; height: 9px; clip-path: polygon(0 100%, 20% 60%, 20% 100%, 35% 100%, 35% 40%, 55% 40%, 55% 100%, 70% 100%, 70% 20%, 100% 20%, 100% 100%); }
+    .wifi { width: 13px; height: 9px; border-radius: 50% 50% 0 0; background: transparent; border-top: 3px solid #151b24; }
+    .bat { width: 18px; height: 9px; border: 1.7px solid #151b24; background: transparent; position: relative; }
+    .bat::after { content: ""; position: absolute; right: 2px; top: 2px; width: 9px; height: 3px; background: #151b24; }
+
+    .topbar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+    }
+    .back, .more, .iconbtn {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      border: 0;
+      background: transparent;
+      color: #263243;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .title { flex: 1; min-width: 0; }
+    .title b { display: block; font-size: 16px; line-height: 1.2; }
+    .title span { color: var(--muted); font-size: 11px; }
+
+    .content {
+      position: absolute;
+      inset: 90px 0 68px;
+      overflow: hidden;
+      padding: 0 15px;
+    }
+    .content.scroll { overflow-y: auto; scrollbar-width: none; }
+    .content.scroll::-webkit-scrollbar { display: none; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .tab {
+      min-width: 50px;
+      height: 32px;
+      padding: 0 12px;
+      display: grid;
+      place-items: center;
+      color: #727e8f;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tab.active {
+      color: #fff;
+      background: var(--blue);
+      box-shadow: 0 8px 18px rgba(31,122,248,.22);
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px 0;
+    }
+    .metric {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 9px;
+      min-height: 58px;
+    }
+    .metric label {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 6px;
+    }
+    .metric strong {
+      font: 700 16px/1.1 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .metric small { color: var(--muted); font-size: 10px; margin-left: 2px; }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+    .warn { color: var(--warn); }
+
+    .flow-layout {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 8px;
+    }
+    .rail {
+      position: relative;
+      padding-top: 18px;
+    }
+    .rail::before {
+      content: "";
+      position: absolute;
+      left: 26px;
+      top: 22px;
+      bottom: 22px;
+      width: 2px;
+      background: linear-gradient(var(--tx), var(--amp), var(--coup), var(--ant), var(--path), var(--rx));
+    }
+    .rail-node {
+      position: relative;
+      z-index: 2;
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 32px;
+      background: #fff;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(30,40,60,.08);
+    }
+    .rail-node small {
+      position: absolute;
+      left: 50px;
+      top: 9px;
+      color: #617084;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .cards { padding-top: 8px; }
+    .node-card {
+      position: relative;
+      background: #fff;
+      border: 1.5px solid color-mix(in srgb, currentColor 32%, #e9edf4);
+      border-left: 4px solid currentColor;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      padding: 12px 13px;
+      box-shadow: 0 5px 18px rgba(33,45,65,.05);
+      color: var(--tx);
+    }
+    .node-card.amp { color: var(--amp); }
+    .node-card.coup { color: var(--coup); }
+    .node-card.ant { color: var(--ant); }
+    .node-card.path { color: var(--path); }
+    .node-card.rx { color: var(--rx); }
+    .node-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink);
+    }
+    .badge {
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 6px;
+      background: color-mix(in srgb, currentColor 12%, white);
+      color: currentColor;
+      display: inline-grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .node-name { flex: 1; min-width: 0; }
+    .node-name b { display: block; font-size: 14px; }
+    .node-name span { color: var(--muted); font-size: 10px; }
+    .node-value {
+      font: 800 17px/1 "JetBrains Mono", ui-monospace, monospace;
+      color: currentColor;
+      text-align: right;
+    }
+    .node-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      margin-top: 10px;
+      color: #6c7685;
+      font-size: 10px;
+    }
+    .chip {
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: #f4f7fb;
+      color: #606d7e;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 68px;
+      border-top: 1px solid var(--line);
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(12px);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 5px 9px 7px;
+    }
+    .navitem {
+      color: #8a94a3;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .navitem i { font-style: normal; font-size: 18px; }
+    .navitem.active { color: var(--blue); }
+
+    .editor-content {
+      position: absolute;
+      inset: 138px 0 104px;
+      overflow: hidden;
+      background:
+        linear-gradient(#eef3f8 1px, transparent 1px),
+        linear-gradient(90deg, #eef3f8 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .toolbar {
+      height: 48px;
+      margin: 0 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .tool {
+      width: 31px;
+      height: 31px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: #5c6878;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .tool.play { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .tool.wide { width: 50px; font-size: 10px; }
+
+    .canvas-node {
+      position: absolute;
+      width: 122px;
+      min-height: 70px;
+      background: #fff;
+      border: 1.5px solid currentColor;
+      border-radius: 12px;
+      padding: 9px;
+      color: var(--tx);
+      box-shadow: 0 7px 20px rgba(30,50,80,.08);
+    }
+    .canvas-node.amp { color: var(--amp); }
+    .canvas-node.coup { color: var(--coup); }
+    .canvas-node.ant { color: var(--ant); }
+    .canvas-node.path { color: var(--path); }
+    .canvas-node.rx { color: var(--rx); }
+    .canvas-node b { display: block; color: var(--ink); font-size: 12px; margin-bottom: 6px; }
+    .canvas-node span {
+      display: flex;
+      justify-content: space-between;
+      color: #718094;
+      font-size: 9px;
+      line-height: 1.6;
+    }
+    .port {
+      position: absolute;
+      right: -5px;
+      width: 9px;
+      height: 9px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .p1 { top: 28px; }
+    .p2 { bottom: 17px; }
+    .edge {
+      position: absolute;
+      height: 2px;
+      background: currentColor;
+      transform-origin: left center;
+      opacity: .75;
+    }
+    .edge::after {
+      content: "";
+      position: absolute;
+      right: -3px;
+      top: -3px;
+      width: 8px;
+      height: 8px;
+      border-top: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: rotate(45deg);
+    }
+    .minimap {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      width: 70px;
+      height: 70px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--soft-shadow);
+    }
+    .minimap div { position: absolute; width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 3px; }
+
+    .actionbar {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 17px;
+      height: 74px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: var(--soft-shadow);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .act {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 6px;
+      color: #5c6878;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .act i { font-style: normal; font-size: 18px; color: var(--ink); }
+
+    .search {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f2f5f9;
+      color: #9aa4b2;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 12px;
+      margin: 6px 0 12px;
+    }
+    .side-tabs {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 82px;
+      padding: 12px 0 0 10px;
+      border-right: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+    .side-tabs div {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      color: #727e8f;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 10px 0 0 10px;
+      margin-bottom: 4px;
+    }
+    .side-tabs .active { color: var(--blue); background: #edf4ff; }
+    .library-grid {
+      margin-left: 90px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding-top: 8px;
+    }
+    .lib-card {
+      min-height: 86px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 11px;
+      box-shadow: 0 4px 16px rgba(30,40,60,.04);
+    }
+    .lib-card i {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, currentColor 14%, white);
+      color: currentColor;
+      font-style: normal;
+      font-weight: 800;
+      margin-bottom: 9px;
+    }
+    .lib-card b { display: block; font-size: 12px; }
+    .lib-card span { color: var(--muted); font-size: 10px; }
+
+    .form-section, .result-section, .scene-card, .template-row, .diag-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 5px 18px rgba(33,45,65,.04);
+    }
+    .form-section { padding: 14px; margin-bottom: 12px; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .section-head span { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .field {
+      display: grid;
+      grid-template-columns: 1fr 98px 42px;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      border-bottom: 1px solid #eef2f6;
+      font-size: 12px;
+    }
+    .field:last-child { border-bottom: 0; }
+    .field label { color: #4c5868; font-weight: 700; }
+    .input {
+      height: 32px;
+      border: 1px solid #edf1f6;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 8px;
+      font: 700 12px "JetBrains Mono", ui-monospace, monospace;
+      background: #fcfdff;
+    }
+    .unit { color: var(--muted); font-size: 11px; text-align: right; }
+    .valid {
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--good);
+      font-size: 12px;
+      font-weight: 800;
+      gap: 6px;
+    }
+
+    .chart {
+      height: 144px;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 8px;
+      align-items: end;
+      padding-top: 16px;
+    }
+    .axis {
+      height: 112px;
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      color: var(--muted);
+      font: 700 9px "JetBrains Mono", ui-monospace, monospace;
+      text-align: right;
+    }
+    .bars {
+      height: 112px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      align-items: end;
+      border-bottom: 1px solid #dfe5ee;
+      background: linear-gradient(#eef2f6 1px, transparent 1px);
+      background-size: 100% 28px;
+    }
+    .bar { border-radius: 4px 4px 0 0; min-height: 10px; }
+    .result-section { padding: 13px; margin-bottom: 12px; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 8px 0 12px;
+    }
+    .kpi {
+      border: 1px solid #eef2f6;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fcfdff;
+    }
+    .kpi label { color: var(--muted); font-size: 10px; }
+    .kpi strong { display: block; margin-top: 4px; font: 800 17px "JetBrains Mono", ui-monospace, monospace; }
+
+    .template-row {
+      min-height: 72px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 46px 1fr 54px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .thumb {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #eaf4ff, #f8f3ff);
+      position: relative;
+    }
+    .thumb::before, .thumb::after {
+      content: "";
+      position: absolute;
+      border: 2px solid var(--blue);
+      border-radius: 5px;
+      width: 13px;
+      height: 13px;
+    }
+    .thumb::before { left: 7px; top: 8px; }
+    .thumb::after { right: 7px; bottom: 8px; border-color: var(--amp); }
+    .template-row b { display: block; font-size: 13px; }
+    .template-row span { display: block; color: var(--muted); font-size: 10px; margin-top: 3px; }
+    .use {
+      height: 28px;
+      border: 0;
+      border-radius: 10px;
+      color: #7448ef;
+      background: #f3efff;
+      font-weight: 800;
+      font-size: 11px;
+    }
+
+    .scene-card {
+      padding: 12px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .scene-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      background: color-mix(in srgb, currentColor 13%, white);
+      color: currentColor;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+    .scene-card b { display: block; font-size: 13px; }
+    .scene-card span { color: var(--muted); font-size: 10px; }
+    .delta { font: 800 12px "JetBrains Mono", ui-monospace, monospace; }
+    .primary-btn {
+      position: absolute;
+      left: 15px;
+      right: 15px;
+      bottom: 78px;
+      height: 46px;
+      border-radius: 13px;
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 12px 25px rgba(31,122,248,.24);
+    }
+
+    .diag-card {
+      padding: 13px;
+      margin-bottom: 11px;
+    }
+    .diag-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .diag-title b { font-size: 13px; }
+    .diag-card p {
+      margin: 0;
+      color: #617084;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .fix {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid #eef2f6;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1300px) {
+      .board { grid-template-columns: repeat(3, minmax(290px, 1fr)); }
+    }
+    @media (max-width: 980px) {
+      .brief { grid-template-columns: 1fr; }
+      .board { grid-template-columns: repeat(2, minmax(290px, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .page { padding: 22px 12px 40px; }
+      .board { grid-template-columns: 1fr; }
+      .brief h1 { font-size: 28px; }
+      .tokens { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="brief">
+      <div>
+        <h1>ProRF 移动端 App 界面设计草案</h1>
+        <p>基于附件中的视觉方向，扩展为覆盖 RF 链路预算 App 主流程的移动端设计稿：工作流概览、图形编辑器、节点库、节点属性、结果总览、模板、场景、诊断。重点表达工程计算工具的精密感、图结构优先、数值可读性和移动端可操作性。</p>
+      </div>
+      <div class="tokens">
+        <div class="token"><b>结构</b><span>底部一级导航，顶部页内模式切换，画布使用浮动工具条。</span></div>
+        <div class="token"><b>视觉</b><span>白色纸面、弱阴影、彩色节点体系、数值使用等宽字体。</span></div>
+        <div class="token"><b>交互</b><span>列表快速审阅，画布精确连接，Inspector 统一编辑参数。</span></div>
+      </div>
+    </section>
+
+    <section class="board">
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>RF 链路预算</b><span>2.4 GHz · 1 km · 11 节点</span></div>
+            <button class="more">···</button>
+          </div>
+          <div class="content scroll">
+            <div class="tabs">
+              <div class="tab">拓扑</div><div class="tab active">流程</div><div class="tab">详情</div><div class="tab">版本</div>
+            </div>
+            <div class="metric-strip">
+              <div class="metric"><label>链路增益</label><strong class="good">+57.0</strong><small>dBm</small></div>
+              <div class="metric"><label>系统余量</label><strong class="good">+52.8</strong><small>dB</small></div>
+              <div class="metric"><label>接收功率</label><strong class="bad">-94.2</strong><small>dBm</small></div>
+            </div>
+            <div class="flow-layout">
+              <div class="rail">
+                <div class="rail-node" style="color:var(--tx)">∿<small>TX</small></div>
+                <div class="rail-node" style="color:var(--amp)">⚡<small>AMP</small></div>
+                <div class="rail-node" style="color:var(--coup)">⊕<small>COUP</small></div>
+                <div class="rail-node" style="color:var(--ant)">⌁<small>ANT</small></div>
+                <div class="rail-node" style="color:var(--path)">◇<small>PATH</small></div>
+                <div class="rail-node" style="color:var(--rx)">▽<small>RX</small></div>
+              </div>
+              <div class="cards">
+                <div class="node-card"><div class="node-head"><span class="badge">TX</span><div class="node-name"><b>发射机</b><span>Pout · 频率 · 调制</span></div><div class="node-value">+23.0</div></div><div class="node-meta"><span>2.4 GHz</span><span>CW</span><span>50 Ω</span></div></div>
+                <div class="node-card amp"><div class="node-head"><span class="badge">AMP</span><div class="node-name"><b>功率放大器</b><span>Gain · NF · P1dB</span></div><div class="node-value">+43.0</div></div><div class="node-meta"><span>增益 +20.0 dB</span><span>NF 2.0 dB</span><span>P1dB +33.0 dBm</span></div></div>
+                <div class="node-card coup"><div class="node-head"><span class="badge">COUP</span><div class="node-name"><b>定向耦合器</b><span>Through · Coupled · Isolation</span></div><div class="node-value">+43.0</div></div><div class="node-meta"><span class="good">通过损耗 -0.5 dB</span><span class="bad">耦合值 -20.0 dB</span></div></div>
+                <div class="node-card ant"><div class="node-head"><span class="badge">ANT</span><div class="node-name"><b>发射天线</b><span>Gain · Pattern · Polarization</span></div><div class="node-value">+57.0</div></div><div class="node-meta"><span>增益 +15.0 dBi</span><span>方向性 12.0 dB</span></div></div>
+                <div class="node-card path"><div class="node-head"><span class="badge">PATH</span><div class="node-name"><b>自由空间传播</b><span>距离 · 频率 · 环境</span></div><div class="node-value">-43.0</div></div><div class="node-meta"><span>1.0 km</span><span>2.4 GHz</span><span>晴朗</span></div></div>
+                <div class="node-card rx"><div class="node-head"><span class="badge">RX</span><div class="node-name"><b>接收机</b><span>NF · 灵敏度 · 带宽</span></div><div class="node-value bad">-94.2</div></div><div class="node-meta"><span>NF 3.0 dB</span><span>灵敏度 -146.0 dBm</span></div></div>
+              </div>
+            </div>
+          </div>
+          <nav class="bottom-nav"><div class="navitem active"><i>⌘</i>工作流</div><div class="navitem"><i>▰</i>库</div><div class="navitem"><i>▥</i>结果</div><div class="navitem"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>编辑工作流</b><span>RF 链路预算</span></div>
+            <button class="iconbtn">↶</button><button class="iconbtn">↷</button><button class="iconbtn">⏻</button>
+          </div>
+          <div class="toolbar">
+            <div class="tool">↱</div><div class="tool">◎</div><div class="tool">↔</div><div class="tool play">▶</div><div class="tool wide">100%</div><div class="tool">⌗</div><div class="tool wide">自动</div><div class="tool">▦</div>
+          </div>
+          <div class="editor-content">
+            <div class="canvas-node" style="left:88px;top:32px;"><b>发射机</b><span>Pout <em>Freq</em></span><span>Mod <em>Out</em></span><i class="port p1"></i></div>
+            <div class="canvas-node amp" style="left:92px;top:134px;"><b>功率放大器</b><span>Pin <em>Pout</em></span><span>Gain <em>NF</em></span><i class="port p1"></i></div>
+            <div class="canvas-node coup" style="left:88px;top:244px;"><b>定向耦合器</b><span>Input <em>Through</em></span><span>Coupled <em>Iso</em></span><i class="port p1"></i><i class="port p2"></i></div>
+            <div class="canvas-node ant" style="left:220px;top:248px;"><b>天线</b><span>Input <em>Gain</em></span><span>EIRP <em>Feed</em></span><i class="port p1"></i></div>
+            <div class="canvas-node path" style="left:96px;top:374px;"><b>自由空间传播</b><span>EIRP <em>Prx</em></span><span>Distance <em>Loss</em></span><i class="port p1"></i></div>
+            <div class="canvas-node rx" style="left:232px;top:392px;"><b>接收机</b><span>Input <em>Margin</em></span><span>Noise <em>SNR</em></span><i class="port p1"></i></div>
+            <div class="edge" style="left:197px;top:102px;width:48px;color:var(--tx);transform:rotate(90deg);"></div>
+            <div class="edge" style="left:200px;top:204px;width:48px;color:var(--amp);transform:rotate(90deg);"></div>
+            <div class="edge" style="left:203px;top:282px;width:82px;color:var(--coup);"></div>
+            <div class="edge" style="left:207px;top:315px;width:70px;color:var(--coup);transform:rotate(90deg);"></div>
+            <div class="edge" style="left:203px;top:426px;width:96px;color:var(--path);"></div>
+            <div class="minimap"><div style="left:12px;top:10px;color:var(--tx)"></div><div style="left:26px;top:24px;color:var(--amp)"></div><div style="left:14px;top:40px;color:var(--coup)"></div><div style="left:42px;top:38px;color:var(--rx)"></div></div>
+          </div>
+          <div class="actionbar"><div class="act"><i>⊕</i>添加节点</div><div class="act"><i>⛓</i>添加连接</div><div class="act"><i>▱</i>注释</div><div class="act"><i>⌘</i>对子系统</div></div>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>节点库</b><span>拖入画布或点按添加</span></div>
+            <button class="more">筛选</button>
+          </div>
+          <div class="content scroll">
+            <div class="search">⌕ 搜索节点、参数或单位</div>
+            <div class="side-tabs">
+              <div class="active">全部</div><div>信号源</div><div>有源器件</div><div>无源器件</div><div>天线与传播</div><div>接收与测量</div><div>分析工具</div>
+            </div>
+            <div class="library-grid">
+              <div class="lib-card" style="color:var(--tx)"><i>∿</i><b>信号源</b><span>Pout / Freq / Mod</span></div>
+              <div class="lib-card" style="color:var(--amp)"><i>⚡</i><b>功率放大器</b><span>Gain / NF / P1dB</span></div>
+              <div class="lib-card" style="color:#f0733f"><i>▣</i><b>滤波器</b><span>BW / IL / Ripple</span></div>
+              <div class="lib-card" style="color:var(--coup)"><i>⊕</i><b>定向耦合器</b><span>Through / Coupled</span></div>
+              <div class="lib-card" style="color:#48a868"><i>═</i><b>传输线</b><span>Length / Loss</span></div>
+              <div class="lib-card" style="color:var(--ant)"><i>⌁</i><b>天线</b><span>Gain / Pattern</span></div>
+              <div class="lib-card" style="color:var(--path)"><i>◇</i><b>自由空间路径</b><span>Distance / Freq</span></div>
+              <div class="lib-card" style="color:var(--rx)"><i>▽</i><b>接收机</b><span>NF / Sensitivity</span></div>
+              <div class="lib-card" style="color:#64748b"><i>ƒ</i><b>频响曲线</b><span>Sweep / Chart</span></div>
+              <div class="lib-card" style="color:#ef5d75"><i>!</i><b>限值检查</b><span>Rule / Alert</span></div>
+            </div>
+          </div>
+          <nav class="bottom-nav"><div class="navitem"><i>⌘</i>工作流</div><div class="navitem active"><i>▰</i>库</div><div class="navitem"><i>▥</i>结果</div><div class="navitem"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>节点属性</b><span style="color:var(--amp)">功率放大器</span></div>
+            <button class="more">···</button>
+          </div>
+          <div class="content scroll">
+            <div class="tabs">
+              <div class="tab active">参数</div><div class="tab">输入/输出</div><div class="tab">结果</div><div class="tab">图表</div><div class="tab">诊断</div>
+            </div>
+            <div class="form-section">
+              <div class="section-head">基本参数 <span>必填</span></div>
+              <div class="field"><label>增益 Gain</label><div class="input">23.0</div><div class="unit">dB</div></div>
+              <div class="field"><label>噪声系数 NF</label><div class="input">2.0</div><div class="unit">dB</div></div>
+              <div class="field"><label>P1dB</label><div class="input">33.0</div><div class="unit">dBm</div></div>
+              <div class="field"><label>IP3</label><div class="input">45.0</div><div class="unit">dBm</div></div>
+              <div class="field"><label>工作频率</label><div class="input">2.4</div><div class="unit">GHz</div></div>
+              <div class="field"><label>温度</label><div class="input">25</div><div class="unit">°C</div></div>
+            </div>
+            <div class="form-section">
+              <div class="section-head">高级参数 <span>折叠</span></div>
+              <div class="chip">启用温漂模型</div>
+              <div class="chip">输出压缩告警</div>
+              <div class="chip">参与 Sweep</div>
+            </div>
+            <div class="valid">✓ 计算有效 · 下游 8 个节点已更新</div>
+          </div>
+          <nav class="bottom-nav"><div class="navitem active"><i>⌘</i>工作流</div><div class="navitem"><i>▰</i>库</div><div class="navitem"><i>▥</i>结果</div><div class="navitem"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>结果总览</b><span>最近一次执行 · 0.18 s</span></div>
+            <button class="more">导出</button>
+          </div>
+          <div class="content scroll">
+            <div class="tabs">
+              <div class="tab active">参数</div><div class="tab">图表</div><div class="tab">表格</div><div class="tab">日志</div>
+            </div>
+            <div class="result-section">
+              <div class="section-head">链路摘要 <span>全部通过</span></div>
+              <div class="kpi-grid">
+                <div class="kpi"><label>EIRP</label><strong class="good">+57.0</strong></div>
+                <div class="kpi"><label>接收功率</label><strong>-94.2</strong></div>
+                <div class="kpi"><label>系统余量</label><strong class="good">+52.8</strong></div>
+                <div class="kpi"><label>自由空间损耗</label><strong>-151.2</strong></div>
+              </div>
+              <div class="chip">计算链路 11 节点</div><div class="chip">缓存命中 6</div><div class="chip">无单位错误</div>
+            </div>
+            <div class="result-section">
+              <div class="section-head">链路瀑布图 <span>dBm</span></div>
+              <div class="chart">
+                <div class="axis"><span>60</span><span>0</span><span>-60</span><span>-120</span></div>
+                <div class="bars">
+                  <div class="bar" style="height:78px;background:var(--tx)"></div>
+                  <div class="bar" style="height:70px;background:var(--coup)"></div>
+                  <div class="bar" style="height:60px;background:var(--ant)"></div>
+                  <div class="bar" style="height:45px;background:#7f65f2"></div>
+                  <div class="bar" style="height:35px;background:#8d5cf6"></div>
+                  <div class="bar" style="height:24px;background:#a85eea"></div>
+                  <div class="bar" style="height:88px;background:var(--rx)"></div>
+                </div>
+              </div>
+            </div>
+            <div class="result-section">
+              <div class="section-head">关键瓶颈 <span>建议</span></div>
+              <div class="diag-card" style="box-shadow:none;margin:0;color:var(--warn)"><div class="diag-title"><i class="dot"></i><b>接收功率接近设计阈值</b></div><p>当前余量足够，但长距离场景下降明显。建议检查接收天线增益或降低路径距离 Sweep 上限。</p></div>
+            </div>
+          </div>
+          <nav class="bottom-nav"><div class="navitem"><i>⌘</i>工作流</div><div class="navitem"><i>▰</i>库</div><div class="navitem active"><i>▥</i>结果</div><div class="navitem"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <div class="title"><b>模板</b><span>从标准 RF 工作流开始</span></div>
+            <button class="more">管理</button>
+          </div>
+          <div class="content scroll">
+            <div class="search">⌕ 搜索模板</div>
+            <div class="tabs">
+              <div class="tab active">全部</div><div class="tab">RF</div><div class="tab">DSP</div><div class="tab">通信</div><div class="tab">自定义</div>
+            </div>
+            <div class="template-row"><div class="thumb"></div><div><b>链路预算模板</b><span>信号源到接收机 · 11 节点</span><span class="good">RF · 推荐</span></div><button class="use">使用</button></div>
+            <div class="template-row"><div class="thumb"></div><div><b>卫星链路分析</b><span>LEO 下行链路 · 18 节点</span><span>RF · 天线模型</span></div><button class="use">使用</button></div>
+            <div class="template-row"><div class="thumb"></div><div><b>雷达方程分析</b><span>目标 RCS · 接收 SNR</span><span>RF · Sweep</span></div><button class="use">使用</button></div>
+            <div class="template-row"><div class="thumb"></div><div><b>OFDM 接收链路</b><span>空口传播到解调前端</span><span>DSP · 22 节点</span></div><button class="use">使用</button></div>
+            <div class="template-row"><div class="thumb"></div><div><b>自定义空白工作流</b><span>从节点库手动搭建</span><span>Blank</span></div><button class="use">创建</button></div>
+          </div>
+          <nav class="bottom-nav"><div class="navitem active"><i>⌘</i>工作流</div><div class="navitem"><i>▰</i>库</div><div class="navitem"><i>▥</i>结果</div><div class="navitem"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>场景管理</b><span>参数集与环境对比</span></div>
+            <button class="more">编辑</button>
+          </div>
+          <div class="content scroll">
+            <div class="scene-card" style="color:var(--tx)"><div class="scene-icon">⌂</div><div><b>默认场景</b><span>基准配置 · 1.0 km · 25°C</span></div><div class="delta good">当前</div></div>
+            <div class="scene-card" style="color:var(--coup)"><div class="scene-icon">☼</div><div><b>高增益天线场景</b><span>天线增益 +3.0 dBi</span></div><div class="delta good">+3.2 dB</div></div>
+            <div class="scene-card" style="color:var(--path)"><div class="scene-icon">↗</div><div><b>长距离场景</b><span>距离 2.0 km</span></div><div class="delta bad">-6.8 dB</div></div>
+            <div class="scene-card" style="color:var(--ant)"><div class="scene-icon">❄</div><div><b>低温环境场景</b><span>温度 -20°C</span></div><div class="delta good">+0.6 dB</div></div>
+            <div class="result-section">
+              <div class="section-head">场景对比 <span>系统余量</span></div>
+              <div class="chart">
+                <div class="axis"><span>60</span><span>40</span><span>20</span><span>0</span></div>
+                <div class="bars">
+                  <div class="bar" style="height:88px;background:var(--blue)"></div>
+                  <div class="bar" style="height:96px;background:var(--coup)"></div>
+                  <div class="bar" style="height:68px;background:var(--path)"></div>
+                  <div class="bar" style="height:90px;background:var(--ant)"></div>
+                  <div class="bar" style="height:1px;background:transparent"></div>
+                  <div class="bar" style="height:1px;background:transparent"></div>
+                  <div class="bar" style="height:1px;background:transparent"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="primary-btn">＋ 新建场景</button>
+          <nav class="bottom-nav"><div class="navitem"><i>⌘</i>工作流</div><div class="navitem"><i>▰</i>库</div><div class="navitem"><i>▥</i>结果</div><div class="navitem active"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+
+      <article class="phone">
+        <div class="screen">
+          <div class="status"><span>9:41</span><div class="icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></div></div>
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title"><b>诊断中心</b><span>单位、连接与执行检查</span></div>
+            <button class="more">全部</button>
+          </div>
+          <div class="content scroll">
+            <div class="metric-strip">
+              <div class="metric"><label>错误</label><strong class="bad">0</strong></div>
+              <div class="metric"><label>警告</label><strong class="warn">2</strong></div>
+              <div class="metric"><label>建议</label><strong>5</strong></div>
+            </div>
+            <div class="diag-card" style="color:var(--warn)">
+              <div class="diag-title"><i class="dot"></i><b>功放接近压缩区</b></div>
+              <p>节点「功率放大器」输出 +43.0 dBm，距离 P1dB 余量 10.0 dB。若场景提高输入功率，需要启用压缩模型。</p>
+              <div class="fix"><span>打开节点属性</span><span>›</span></div>
+            </div>
+            <div class="diag-card" style="color:var(--warn)">
+              <div class="diag-title"><i class="dot"></i><b>长距离场景余量下降</b></div>
+              <p>场景「长距离」下系统余量减少 6.8 dB。建议对距离参数建立 Sweep，观察 1 km 到 5 km 的临界点。</p>
+              <div class="fix"><span>创建 Sweep 分析</span><span>›</span></div>
+            </div>
+            <div class="diag-card" style="color:var(--good)">
+              <div class="diag-title"><i class="dot"></i><b>单位系统检查通过</b></div>
+              <p>所有功率、增益、距离和频率参数均有明确维度，未发现隐式单位转换。</p>
+            </div>
+            <div class="diag-card" style="color:var(--good)">
+              <div class="diag-title"><i class="dot"></i><b>DAG 结构有效</b></div>
+              <p>图中 11 个节点、10 条主连接、1 条耦合支路均可拓扑排序，无循环依赖。</p>
+            </div>
+          </div>
+          <nav class="bottom-nav"><div class="navitem active"><i>⌘</i>工作流</div><div class="navitem"><i>▰</i>库</div><div class="navitem"><i>▥</i>结果</div><div class="navitem"><i>▦</i>场景</div><div class="navitem"><i>⚙</i>设置</div></nav>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

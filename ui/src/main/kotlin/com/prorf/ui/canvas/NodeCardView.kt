@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -30,128 +30,147 @@ import com.prorf.ui.model.NodeStatus
 import com.prorf.ui.model.UiNodeCard
 
 /** Card width in dp — shared with WorkflowCanvas for edge endpoint math. */
-internal const val NODE_CARD_WIDTH_DP = 180f
+internal const val NODE_CARD_WIDTH_DP = 200f
 
-/** Approx vertical center of card from its top edge (dp) — used for port/edge alignment. */
-internal const val NODE_PORT_Y_DP = 30f
+/** Colored header band height in dp. */
+internal const val NODE_HEADER_HEIGHT_DP = 26f
 
 /**
- * Visual representation of a node card on the workflow canvas.
+ * Vertical center of the full card (dp) — used for port/edge alignment.
+ * Header(26) + body padding+text(52) ≈ 78dp total → center ≈ 39dp.
+ */
+internal const val NODE_PORT_Y_DP = 39f
+
+/**
+ * Node card for the workflow canvas.
  *
- * Layout: 4dp left category stripe + content (name row + value/type row).
- * Output value gets bold labelLarge when computed; a 3-letter category abbr
- * is shown when idle. Port dots extend beyond left/right edges.
+ * Visual: full-width colored header (type abbr + status dot) + white body
+ * (display name + output value or idle hint). Port dots protrude at the
+ * vertical center of the card for edge attachment.
  */
 @Composable
 fun NodeCardView(card: UiNodeCard, modifier: Modifier = Modifier) {
     val catColor = categoryColor(card.typeId)
+    val abbr = categoryAbbr(card.typeId)
     val cardShape = RoundedCornerShape(8.dp)
+
     val borderColor = when {
         card.isSelected -> MaterialTheme.colorScheme.primary
         card.status == NodeStatus.ERROR -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.outlineVariant
+        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
     }
     val borderWidth = if (card.isSelected) 2.dp else 0.5.dp
     val elevation = if (card.isSelected) 6.dp else 2.dp
     val surfaceColor = MaterialTheme.colorScheme.surface
 
     Box(modifier = modifier.width(NODE_CARD_WIDTH_DP.dp)) {
-        // Main card: left stripe + content column
-        Row(
+        Column(
             modifier = Modifier
                 .shadow(elevation, cardShape)
                 .clip(cardShape)
                 .background(surfaceColor)
                 .border(borderWidth, borderColor, cardShape),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Category color stripe
+            // ── Colored header band ──────────────────────────────────────────────
             Box(
                 modifier = Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .height(NODE_HEADER_HEIGHT_DP.dp)
                     .background(catColor),
-            )
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                contentAlignment = Alignment.CenterStart,
             ) {
-                // Header: display name + status dot
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text = card.displayName,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
+                        text = abbr,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
                     )
-                    Spacer(Modifier.width(4.dp))
-                    StatusDot(status = card.status)
+                    Spacer(Modifier.weight(1f))
+                    val statusColor = when (card.status) {
+                        NodeStatus.IDLE -> Color.White.copy(alpha = 0.30f)
+                        NodeStatus.RUNNING -> Color.White
+                        NodeStatus.SUCCESS -> Color(0xFF4ADE80)
+                        NodeStatus.ERROR -> Color(0xFFFCA5A5)
+                    }
+                    Box(Modifier.size(6.dp).background(statusColor, CircleShape))
                 }
+            }
+
+            // ── Body ─────────────────────────────────────────────────────────────
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Text(
+                    text = card.displayName,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
                 Spacer(Modifier.height(5.dp))
-                // Value row: split num (bold) + unit (small) OR category abbreviation
+
                 if (card.outputSummary.isNotEmpty()) {
-                    val isNegativeOutput = card.outputSummary.trimStart().startsWith("-")
-                    val valueColor = if (isNegativeOutput)
-                        MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
-                    else catColor
+                    val isNeg = card.outputSummary.trimStart().startsWith("-")
+                    val valueColor = if (isNeg) MaterialTheme.colorScheme.error.copy(alpha = 0.9f) else catColor
                     val spIdx = card.outputSummary.indexOf(' ')
-                    val numPart = if (spIdx > 0) card.outputSummary.substring(0, spIdx)
-                                  else card.outputSummary
+                    val numPart = if (spIdx > 0) card.outputSummary.substring(0, spIdx) else card.outputSummary
                     val unitPart = if (spIdx > 0) card.outputSummary.substring(spIdx + 1) else ""
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.Baseline) {
                         Text(
                             text = numPart,
                             style = MaterialTheme.typography.labelLarge,
                             color = valueColor,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                         )
                         if (unitPart.isNotEmpty()) {
                             Spacer(Modifier.width(2.dp))
                             Text(
                                 text = unitPart,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = valueColor.copy(alpha = 0.65f),
+                                color = valueColor.copy(alpha = 0.6f),
                                 fontSize = 8.sp,
-                                maxLines = 1,
                             )
                         }
                     }
                 } else {
-                    Text(
-                        text = card.typeId.substringAfterLast('.'),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = catColor.copy(alpha = 0.65f),
-                        fontSize = 9.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    // Idle state: show port dots + type hint
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(5.dp).background(catColor.copy(alpha = 0.35f), CircleShape))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = card.typeId.substringAfterLast('.'),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = catColor.copy(alpha = 0.5f),
+                            fontSize = 8.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Box(Modifier.size(5.dp).background(catColor.copy(alpha = 0.35f), CircleShape))
+                    }
                 }
             }
         }
 
-        // Input port dot — left edge, vertically centered
+        // Input port dot — protrudes from left edge at vertical center
         PortDot(
             color = catColor,
             ringColor = surfaceColor,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = (-5).dp),
+            modifier = Modifier.align(Alignment.CenterStart).offset(x = (-5).dp),
         )
 
-        // Output port dot — right edge, vertically centered
+        // Output port dot — protrudes from right edge at vertical center
         PortDot(
             color = catColor,
             ringColor = surfaceColor,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .offset(x = 5.dp),
+            modifier = Modifier.align(Alignment.CenterEnd).offset(x = 5.dp),
         )
     }
 }
@@ -166,45 +185,32 @@ private fun PortDot(color: Color, ringColor: Color, modifier: Modifier = Modifie
     )
 }
 
-@Composable
-private fun StatusDot(status: NodeStatus) {
-    val color = when (status) {
-        NodeStatus.IDLE -> Color(0xFF9CA3AF)
-        NodeStatus.RUNNING -> Color(0xFF3B82F6)
-        NodeStatus.SUCCESS -> Color(0xFF22C55E)
-        NodeStatus.ERROR -> Color(0xFFEF4444)
-    }
-    Box(modifier = Modifier.size(7.dp).background(color, CircleShape))
-}
-
-/**
- * Derives a category accent color from the node typeId string.
- * No RF domain knowledge — pure structural pattern matching.
- */
-private fun categoryColor(typeId: String): Color {
+/** Category accent color derived from typeId. */
+internal fun categoryColor(typeId: String): Color {
     val name = typeId.substringAfterLast('.')
     return when {
         name.contains("Source") || name.contains("Signal") || name.contains("Noise") -> Color(0xFF2F80ED)
-        name.contains("Amplifier") -> Color(0xFF27AE60)
+        name.contains("Amplifier") -> Color(0xFFE05A00)
         name.contains("Attenuator") || name.contains("Cable") || name.contains("Filter") -> Color(0xFFF2994A)
-        name.contains("Loss") || name.contains("Channel") || name.contains("Path") -> Color(0xFF9B51E0)
-        name.contains("Receiver") || name.contains("Sensitivity") -> Color(0xFFEB5757)
+        name.contains("Loss") || name.contains("Channel") || name.contains("Path") -> Color(0xFF27AE60)
+        name.contains("Receiver") || name.contains("Sensitivity") -> Color(0xFF7B2FBE)
         else -> Color(0xFF64748B)
     }
 }
 
-/** Short 2–3 letter category badge shown when no execution output is available. */
-private fun categoryAbbr(typeId: String): String {
+/** Short 2–4 letter type abbreviation shown in the header band. */
+internal fun categoryAbbr(typeId: String): String {
     val name = typeId.substringAfterLast('.')
     return when {
-        name.contains("Signal") -> "SRC"
+        name.contains("Signal") -> "TX"
         name.contains("Noise") -> "NSE"
         name.contains("Amplifier") -> "AMP"
         name.contains("Attenuator") -> "ATT"
         name.contains("Cable") -> "CBL"
         name.contains("Filter") -> "FLT"
-        name.contains("Loss") || name.contains("Path") || name.contains("Channel") -> "CH"
-        name.contains("Receiver") -> "RCV"
-        else -> name.take(3).uppercase()
+        name.contains("Loss") || name.contains("Path") || name.contains("Channel") -> "PATH"
+        name.contains("Receiver") -> "RX"
+        name.contains("Sensitivity") -> "SNS"
+        else -> name.take(4).uppercase()
     }
 }

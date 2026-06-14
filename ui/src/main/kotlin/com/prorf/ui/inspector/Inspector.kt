@@ -319,18 +319,8 @@ private fun nodeTypeAbbr(typeId: String): String {
     }
 }
 
-/** Derives a structural category color from typeId — no domain knowledge, pure string matching. */
-private fun nodeTypeColor(typeId: String): Color {
-    val name = typeId.substringAfterLast('.')
-    return when {
-        name.contains("Source", ignoreCase = true) || name.contains("Signal", ignoreCase = true) || name.contains("Noise", ignoreCase = true) -> Color(0xFF2F80ED)
-        name.contains("Amplifier", ignoreCase = true) -> Color(0xFF27AE60)
-        name.contains("Attenuator", ignoreCase = true) || name.contains("Cable", ignoreCase = true) || name.contains("Filter", ignoreCase = true) -> Color(0xFFF2994A)
-        name.contains("Loss", ignoreCase = true) || name.contains("Channel", ignoreCase = true) || name.contains("Path", ignoreCase = true) || name.contains("Fspl", ignoreCase = true) -> Color(0xFF9B51E0)
-        name.contains("Receiver", ignoreCase = true) || name.contains("Sensitivity", ignoreCase = true) -> Color(0xFFEB5757)
-        else -> Color(0xFF64748B)
-    }
-}
+/** Derives a structural category color from typeId — delegates to NodeCardView's shared function. */
+private fun nodeTypeColor(typeId: String): Color = com.prorf.ui.canvas.categoryColor(typeId)
 
 // ── Quick summary banner ──────────────────────────────────────────────────────
 

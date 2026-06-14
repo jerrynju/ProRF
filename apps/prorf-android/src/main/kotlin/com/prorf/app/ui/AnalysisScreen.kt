@@ -82,12 +82,12 @@ fun AnalysisScreen() {
                 title = {
                     Column {
                         Text(
-                            "Analysis",
+                            "结果",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            "RF engineering overview",
+                            "RF 工程概览",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -113,21 +113,21 @@ fun AnalysisScreen() {
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     StatCard(
-                        label = "Workflows",
+                        label = "工作流",
                         value = "${summaries.size}",
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f),
                     )
                     StatCard(
-                        label = "Total Nodes",
+                        label = "总节点",
                         value = "$totalNodes",
-                        color = Color(0xFF27AE60),
+                        color = Color(0xFFE05A00),
                         modifier = Modifier.weight(1f),
                     )
                     StatCard(
-                        label = "Node Types",
+                        label = "节点类型",
                         value = "${definitions.size}",
-                        color = Color(0xFF9B51E0),
+                        color = Color(0xFF7B2FBE),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -246,10 +246,10 @@ private fun NodeCategoryChart(
     val maxCount = categoryCounts.values.maxOrNull()?.coerceAtLeast(1) ?: 1
     val colors = mapOf(
         "Source" to Color(0xFF2F80ED),
-        "Active" to Color(0xFF27AE60),
+        "Active" to Color(0xFFE05A00),
         "Passive" to Color(0xFFF2994A),
-        "Channel" to Color(0xFF9B51E0),
-        "Receiver" to Color(0xFFEB5757),
+        "Channel" to Color(0xFF27AE60),
+        "Receiver" to Color(0xFF7B2FBE),
     )
 
     Card(
