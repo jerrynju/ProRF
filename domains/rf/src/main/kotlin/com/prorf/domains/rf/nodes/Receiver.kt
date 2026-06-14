@@ -27,6 +27,7 @@ object Receiver {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Receiver",
+        description = "RX terminal — computes sensitivity, noise floor, and link margin",
         inputs = listOf(PortDefinition(RfPort.RF_IN, "RF In", "power_dbm")),
         outputs = listOf(
             PortDefinition("rxPwr", "Received Power", "power_dbm"),

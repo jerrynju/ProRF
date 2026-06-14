@@ -1,0 +1,53 @@
+workflow "amplified_link" {
+    imports {
+        rf.std.v1
+    }
+
+    variables {
+        carrier = 5.8 GHz
+        path = 2 km
+    }
+
+    nodes {
+        src: SignalSource {
+            power = 0 dBm
+            frequency = carrier
+        }
+
+        pa: PowerAmplifier {
+            gain = 18 dB
+            nf = 2.1 dB
+            p1db = 30 dBm
+        }
+
+        ch: FreeSpacePath {
+            distance = path
+            frequency = carrier
+        }
+
+        rx: Receiver {
+            noiseFigure = 3 dB
+        }
+    }
+
+    edges {
+        src.output.power -> pa.input.power
+        pa.output.power -> ch.input.power
+        ch.output.power -> rx.input.power
+    }
+
+    scenarios {
+        nominal
+        long_range {
+            ch.distance = 5 km
+        }
+        reduced_gain {
+            pa.gain = 12 dB
+        }
+    }
+
+    outputs {
+        rx.snr
+        rx.link_margin
+    }
+}

@@ -25,6 +25,7 @@ object NoiseSource {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Noise Source",
+        description = "Thermal noise source — outputs P = kTB noise power floor in dBm",
         inputs = emptyList(),
         outputs = listOf(
             PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm"),

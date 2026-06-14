@@ -19,6 +19,7 @@ object Amplifier {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Amplifier",
+        description = "Active gain block — applies gain (dB) and adds noise figure",
         inputs = listOf(PortDefinition(RfPort.RF_IN, "RF In", "power_dbm")),
         outputs = listOf(PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm")),
         parameters = listOf(

@@ -24,7 +24,7 @@ class WorkflowListViewModel(application: Application) : AndroidViewModel(applica
     val state: StateFlow<WorkflowListState> = _state
 
     val templates: List<WorkflowSummary> = WorkflowTemplates.all.map { g ->
-        WorkflowSummary(id = g.id, name = g.name, nodeCount = g.nodes.size)
+        WorkflowSummary(id = g.id, name = g.name, nodeCount = g.nodes.size, edgeCount = g.edges.size)
     }
 
     init {

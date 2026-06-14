@@ -9,6 +9,8 @@ data class WorkflowSummary(
     val id: String,
     val name: String,
     val nodeCount: Int,
+    val edgeCount: Int = 0,
+    val lastModifiedMs: Long = 0L,
 )
 
 /**
@@ -30,6 +32,8 @@ class WorkflowRepository(filesDir: File) {
                     id = id,
                     name = graph.metadata["name"] ?: id,
                     nodeCount = graph.nodes.size,
+                    edgeCount = graph.edges.size,
+                    lastModifiedMs = file.lastModified(),
                 )
             }.getOrNull()
         }

@@ -16,6 +16,7 @@ object SignalSource {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Signal Source",
+        description = "TX entry point — outputs configurable transmit power in dBm",
         inputs = emptyList(),
         outputs = listOf(PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm")),
         parameters = listOf(

@@ -34,5 +34,8 @@ include(":services")
 // Serialization (workflow file format)
 include(":serialization")
 
+// ProRF DSL v1 (AI-native workflow source format)
+include(":dsl")
+
 // L4 — Android App Shell
 include(":apps:prorf-android")  // Scaffolded in M4; existing monolith at android/ until full migration

@@ -1,0 +1,16 @@
+workflow "cycle" {
+    nodes {
+        a: PowerAmplifier {
+            gain = 1 dB
+        }
+
+        b: PowerAmplifier {
+            gain = 1 dB
+        }
+    }
+
+    edges {
+        a.output.power -> b.input.power
+        b.output.power -> a.input.power
+    }
+}

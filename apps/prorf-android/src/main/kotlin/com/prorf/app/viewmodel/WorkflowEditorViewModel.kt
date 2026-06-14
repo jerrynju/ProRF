@@ -45,9 +45,9 @@ sealed interface WorkflowEditorState {
                     else -> NodeStatus.IDLE
                 }
                 val summary = outputs?.entries
-                    ?.take(2)
-                    ?.joinToString("  ") { (k, v) ->
-                        "$k: ${formatSummaryValue(v)}"
+                    ?.take(1)
+                    ?.joinToString("") { (_, v) ->
+                        WorkflowEditorViewModel.formatSummaryValue(v)
                     }
                     ?: ""
                 node.toUiCard(
@@ -219,6 +219,14 @@ class WorkflowEditorViewModel(
         }
     }
 
+    fun renameWorkflow(newName: String) {
+        val ready = _state.value as? WorkflowEditorState.Ready ?: return
+        if (newName.isBlank()) return
+        val updated = ready.graph.copy(name = newName.trim())
+        _state.value = ready.copy(graph = updated)
+        autoSave(updated)
+    }
+
     fun renameNode(nodeId: String, newLabel: String) {
         val ready = _state.value as? WorkflowEditorState.Ready ?: return
         val updated = ready.graph.copy(
@@ -257,10 +265,12 @@ class WorkflowEditorViewModel(
         }
     }
 
-    private fun formatSummaryValue(value: Any): String = when (value) {
-        is Quantity -> "%.1f %s".format(value.value, value.unit.symbol)
-        is Number -> "%.1f".format(value.toDouble())
-        else -> value.toString()
+    companion object {
+        fun formatSummaryValue(value: Any): String = when (value) {
+            is Quantity -> "%.1f %s".format(value.value, value.unit.symbol)
+            is Number -> "%.1f".format(value.toDouble())
+            else -> value.toString()
+        }
     }
 
     class Factory(

@@ -25,6 +25,7 @@ object Cable {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Cable",
+        description = "Coaxial cable — total loss from dB/m × length + connector losses",
         inputs = listOf(PortDefinition(RfPort.RF_IN, "RF In", "power_dbm")),
         outputs = listOf(
             PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm"),

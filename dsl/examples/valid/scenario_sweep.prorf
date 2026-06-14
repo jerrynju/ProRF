@@ -1,0 +1,51 @@
+workflow "scenario_sweep" {
+    imports {
+        rf.std.v1
+    }
+
+    variables {
+        f0 = 915 MHz
+        range = 500 m
+        temp = 290 K
+    }
+
+    nodes {
+        tx: Transmitter {
+            power = 14 dBm
+            frequency = f0
+        }
+
+        ch: FreeSpacePath {
+            distance = range
+            frequency = f0
+        }
+
+        rx: Receiver {
+            noiseFigure = 1.5 dB
+        }
+    }
+
+    edges {
+        tx.power -> ch.power
+        ch.power -> rx.power
+    }
+
+    scenarios {
+        nominal
+        hot_day {
+            temp = 320 K
+        }
+        extended_range {
+            range = 2 km
+        }
+        low_power {
+            tx.power = 5 dBm
+        }
+    }
+
+    outputs {
+        rx.snr
+        rx.ber
+        rx.link_margin
+    }
+}

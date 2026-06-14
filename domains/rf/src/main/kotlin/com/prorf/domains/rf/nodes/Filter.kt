@@ -23,6 +23,7 @@ object Filter {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Filter",
+        description = "RF bandpass filter — models in-band insertion loss at center frequency",
         inputs = listOf(PortDefinition(RfPort.RF_IN, "RF In", "power_dbm")),
         outputs = listOf(
             PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm"),

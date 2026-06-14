@@ -1,0 +1,38 @@
+workflow "expression_parameters" {
+    imports {
+        rf.std.v1
+    }
+
+    variables {
+        f0 = 2.4 GHz
+        gain_budget = 10 + 3
+        estimated_nf = log(2)
+        backed_off_power = tx.power - 3 dB
+    }
+
+    nodes {
+        tx: Transmitter {
+            power = 23 dBm
+            frequency = f0
+        }
+
+        pa: PowerAmplifier {
+            gain = 15 dB
+            nf = 2 dB
+            p1db = 30 dBm
+        }
+
+        rx: Receiver {
+            noiseFigure = 2 dB
+        }
+    }
+
+    edges {
+        tx.output.power -> pa.input.power
+        pa.output.power -> rx.input.power
+    }
+
+    outputs {
+        rx.snr
+    }
+}

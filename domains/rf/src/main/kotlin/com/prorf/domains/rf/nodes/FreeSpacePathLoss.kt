@@ -25,6 +25,7 @@ object FreeSpacePathLoss {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Free Space Path Loss",
+        description = "Friis FSPL channel: 32.44 + 20log₁₀(f_MHz) + 20log₁₀(d_km)",
         inputs = listOf(PortDefinition(RfPort.RF_IN, "RF In", "power_dbm")),
         outputs = listOf(
             PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm"),

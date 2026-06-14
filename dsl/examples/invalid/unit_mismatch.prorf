@@ -1,0 +1,8 @@
+workflow "unit_mismatch" {
+    nodes {
+        ch: FreeSpacePath {
+            distance = 10 dBm
+            frequency = 2.4 GHz
+        }
+    }
+}

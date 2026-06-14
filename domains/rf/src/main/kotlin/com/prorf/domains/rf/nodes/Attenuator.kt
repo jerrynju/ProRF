@@ -19,6 +19,7 @@ object Attenuator {
     val definition = NodeDefinition(
         typeId = TYPE_ID,
         displayName = "Attenuator",
+        description = "Passive fixed-loss element — subtracts insertion loss from signal path",
         inputs = listOf(PortDefinition(RfPort.RF_IN, "RF In", "power_dbm")),
         outputs = listOf(PortDefinition(RfPort.RF_OUT, "RF Out", "power_dbm")),
         parameters = listOf(

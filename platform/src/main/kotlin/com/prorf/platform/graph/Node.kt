@@ -7,6 +7,7 @@ package com.prorf.platform.graph
 data class NodeDefinition(
     val typeId: String,
     val displayName: String,
+    val description: String = "",
     val inputs: List<PortDefinition> = emptyList(),
     val outputs: List<PortDefinition> = emptyList(),
     val parameters: List<ParameterDefinition> = emptyList(),

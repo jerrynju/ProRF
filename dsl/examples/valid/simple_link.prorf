@@ -1,0 +1,34 @@
+workflow "simple_link" {
+    imports {
+        rf.std.v1
+    }
+
+    variables {
+        f0 = 2.4 GHz
+    }
+
+    nodes {
+        tx: Transmitter {
+            power = 20 dBm
+            frequency = f0
+        }
+
+        ch: FreeSpacePath {
+            distance = 1 km
+            frequency = f0
+        }
+
+        rx: Receiver {
+            noiseFigure = 2 dB
+        }
+    }
+
+    edges {
+        tx.output.power -> ch.input.power
+        ch.output.power -> rx.input.power
+    }
+
+    outputs {
+        rx.snr
+    }
+}
